@@ -1,0 +1,10 @@
+# Évite d'envoyer au daemon Docker des fichiers locaux inutiles
+# (et surtout node_modules/ : il ne doit pas écraser celui installé
+# dans l'image, ni dist/ déjà construit localement).
+target
+node_modules
+dist
+.git
+.idea
+.vscode
+*.iml

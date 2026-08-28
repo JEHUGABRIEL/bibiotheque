@@ -60,8 +60,16 @@ export class ReservationListComponent {
     return statut === StatutReservation.EN_ATTENTE || statut === StatutReservation.DISPONIBLE;
   }
 
-  formatDate(date: Date): string {
+  formatDate(date: any): string {
     if (!date) return '-';
+    // Le backend envoie "dd-MM-yyyy", on parse manuellement
+    if (typeof date === 'string' && date.includes('-')) {
+      const parts = date.split('-');
+      if (parts.length === 3 && parts[0].length === 2) {
+        const [day, month, year] = parts;
+        return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('fr-FR');
+      }
+    }
     return new Date(date).toLocaleDateString('fr-FR');
   }
 }

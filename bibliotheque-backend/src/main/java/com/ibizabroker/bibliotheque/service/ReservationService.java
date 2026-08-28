@@ -51,6 +51,14 @@ public class ReservationService {
         Books book = booksRepository.findById(bookId)
                 .orElseThrow(() -> new NotFoundException("Livre avec l'id " + bookId + " introuvable"));
 
+        // Règle : un livre DISPONIBLE (copies > 0) ne peut PAS être réservé
+        // Seuls les livres indisponibles (0 copies) peuvent être réservés
+        if (book.getNoOfCopies() > 0) {
+            throw new ConflictException(
+                    "Le livre \"" + book.getBookName() + "\" est disponible avec " + book.getNoOfCopies() + " exemplaire(s) et peut être emprunté. " +
+                    "Seuls les livres indisponibles (0 exemplaire) peuvent être réservés.");
+        }
+
         // Vérifier que l'adhérent existe
         usersRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("Adhérent avec l'id " + userId + " introuvable"));
@@ -69,12 +77,8 @@ public class ReservationService {
             throw new ConflictException("Quota de " + QUOTA_MAX + " réservations actives atteint pour cet adhérent");
         }
 
-        // Déterminer le statut initial
-        if (book.getNoOfCopies() > 0) {
-            reservation.setStatut(StatutReservation.DISPONIBLE);
-        } else {
-            reservation.setStatut(StatutReservation.EN_ATTENTE);
-        }
+        // Le livre est indisponible → statut EN_ATTENTE
+        reservation.setStatut(StatutReservation.EN_ATTENTE);
 
         reservation.setDateReservation(new Date());
 

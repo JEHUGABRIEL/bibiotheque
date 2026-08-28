@@ -35,7 +35,8 @@ export class BorrowBookComponent implements OnInit {
     this.loading = true;
     this.booksService.getBooksList().subscribe({
       next: (data) => {
-        this.books = data;
+        // Règle : seuls les livres disponibles (copies > 0) peuvent être empruntés
+        this.books = data.filter(b => b.noOfCopies > 0);
         this.loading = false;
       },
       error: () => {

@@ -2,11 +2,9 @@ package com.ibizabroker.bibliotheque.controller;
 
 import com.ibizabroker.bibliotheque.dao.BooksRepository;
 import com.ibizabroker.bibliotheque.dao.BorrowRepository;
-import com.ibizabroker.bibliotheque.dao.ReservationRepository;
 import com.ibizabroker.bibliotheque.dao.UsersRepository;
 import com.ibizabroker.bibliotheque.entity.Books;
 import com.ibizabroker.bibliotheque.entity.Borrow;
-import com.ibizabroker.bibliotheque.entity.StatutReservation;
 import com.ibizabroker.bibliotheque.entity.Users;
 import com.ibizabroker.bibliotheque.exceptions.BadRequestException;
 import com.ibizabroker.bibliotheque.exceptions.ConflictException;
@@ -33,9 +31,6 @@ public class BorrowController {
     @Autowired
     private BooksRepository booksRepository;
 
-    @Autowired
-    private ReservationRepository reservationRepository;
-
     @PostMapping
     public ResponseEntity<?> borrowBook(@RequestBody Borrow borrow) {
         if (borrow.getUserId() == null || borrow.getBookId() == null) {
@@ -48,14 +43,7 @@ public class BorrowController {
         Books book = booksRepository.findById(borrow.getBookId())
                 .orElseThrow(() -> new NotFoundException("Livre avec l'id " + borrow.getBookId() + " introuvable"));
 
-        // Règle : un livre avec réservation active (DISPONIBLE) ne peut pas être emprunté
-        boolean hasActiveReservation = reservationRepository.existsByBookIdAndStatutIn(
-                book.getBookId(), List.of(StatutReservation.EN_ATTENTE, StatutReservation.DISPONIBLE));
-        if (hasActiveReservation) {
-            throw new ConflictException(
-                    "Le livre \"" + book.getBookName() + "\" a une réservation active et ne peut pas être emprunté directement.");
-        }
-
+        // Règle : un livre avec 0 exemplaire ne peut pas être emprunté
         if (book.getNoOfCopies() < 1) {
             throw new ConflictException("Le livre \"" + book.getBookName() + "\" n'est plus disponible (0 exemplaire)");
         }

@@ -77,7 +77,8 @@ export class ReservationContainerComponent implements OnInit {
   loadBooks() {
     this.booksService.getBooksList().subscribe({
       next: (books) => {
-        this.books = books;
+        // Règle : seuls les livres indisponibles (0 copies) peuvent être réservés
+        this.books = books.filter(b => b.noOfCopies <= 0);
         books.forEach(b => this.bookNames.set(b.bookId, b.bookName));
       },
       error: (err: HttpErrorResponse) => {

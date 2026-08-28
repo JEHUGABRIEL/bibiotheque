@@ -24,6 +24,7 @@ export class ReservationContainerComponent implements OnInit {
   error: string | null = null;
   currentFilter: StatutReservation | null = null;
 
+  // Create form
   showCreateModal = false;
   formSubmitting = false;
   formError: string | null = null;
@@ -35,6 +36,7 @@ export class ReservationContainerComponent implements OnInit {
   showCancelConfirm = false;
   reservationToCancel: Reservation | null = null;
   cancelError: string | null = null;
+  cancelSuccess: string | null = null;
 
   constructor(
     private reservationService: ReservationService,
@@ -78,7 +80,13 @@ export class ReservationContainerComponent implements OnInit {
         this.books = books;
         books.forEach(b => this.bookNames.set(b.bookId, b.bookName));
       },
-      error: () => {}
+      error: (err: HttpErrorResponse) => {
+        if (err.status === 0) {
+          this.formError = 'Impossible de charger les livres. Le serveur est injoignable.';
+        } else {
+          this.formError = `Erreur lors du chargement des livres : ${err.error?.message || 'Erreur ' + err.status}`;
+        }
+      }
     });
   }
 
@@ -88,7 +96,13 @@ export class ReservationContainerComponent implements OnInit {
         this.users = users;
         users.forEach(u => this.userNames.set(u.userId, u.name));
       },
-      error: () => {}
+      error: (err: HttpErrorResponse) => {
+        if (err.status === 0) {
+          this.formError = 'Impossible de charger les adhérents. Le serveur est injoignable.';
+        } else {
+          this.formError = `Erreur lors du chargement des adhérents : ${err.error?.message || 'Erreur ' + err.status}`;
+        }
+      }
     });
   }
 
@@ -135,13 +149,7 @@ export class ReservationContainerComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.formSubmitting = false;
-        if (err.status === 0) {
-          this.formError = 'Le serveur est injoignable.';
-        } else if (err.error?.message) {
-          this.formError = err.error.message;
-        } else {
-          this.formError = `Erreur ${err.status} : une erreur est survenue`;
-        }
+        this.formError = this.extractErrorMessage(err);
       }
     });
   }
@@ -150,14 +158,14 @@ export class ReservationContainerComponent implements OnInit {
   openCancelConfirm(reservation: Reservation) {
     this.reservationToCancel = reservation;
     this.cancelError = null;
+    this.cancelSuccess = null;
     this.showCancelConfirm = true;
   }
 
   confirmCancel() {
     if (!this.reservationToCancel) return;
     const id = this.reservationToCancel.id;
-    this.showCancelConfirm = false;
-    this.reservationToCancel = null;
+    const bookName = this.bookNames.get(this.reservationToCancel.bookId) || ' ce livre';
 
     this.reservationService.annuler(id).subscribe({
       next: (updated) => {
@@ -165,9 +173,16 @@ export class ReservationContainerComponent implements OnInit {
         if (index >= 0) {
           this.reservations[index] = updated;
         }
+        this.cancelSuccess = 'Réservation pour « ' + bookName + ' » annulée avec succès';
+        this.cancelError = null;
+        setTimeout(() => {
+          this.showCancelConfirm = false;
+          this.cancelSuccess = null;
+        }, 1200);
       },
       error: (err: HttpErrorResponse) => {
-        this.cancelError = err.error?.message || `Erreur ${err.status}`;
+        this.cancelError = this.extractErrorMessage(err);
+        this.cancelSuccess = null;
       }
     });
   }
@@ -176,5 +191,26 @@ export class ReservationContainerComponent implements OnInit {
     this.showCancelConfirm = false;
     this.reservationToCancel = null;
     this.cancelError = null;
+    this.cancelSuccess = null;
+  }
+
+  /**
+   * Extrait un message lisible depuis une HttpErrorResponse.
+   * Gère tous les cas : 400, 404, 409, 500, réseau.
+   */
+  private extractErrorMessage(err: HttpErrorResponse): string {
+    if (err.status === 0) {
+      return 'Le serveur est injoignable. Vérifiez que le backend est démarré.';
+    }
+    if (err.error?.message) {
+      return err.error.message;
+    }
+    switch (err.status) {
+      case 400: return 'Les données envoyées sont invalides. Vérifiez les champs du formulaire.';
+      case 404: return 'La ressource demandée est introuvable.';
+      case 409: return 'Conflit : cette opération ne peut pas être effectuée dans l\'état actuel.';
+      case 500: return 'Erreur interne du serveur. Veuillez réessayer.';
+      default: return 'Erreur ' + err.status + ' : une erreur inattendue est survenue.';
+    }
   }
 }

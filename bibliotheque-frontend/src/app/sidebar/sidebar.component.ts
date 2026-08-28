@@ -1,4 +1,4 @@
-import { Component, HostBinding, Input } from '@angular/core';
+import { Component, EventEmitter, HostBinding, Input, Output } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserAuthService } from '../_service/user-auth.service';
 import { UsersService } from '../_service/users.service';
@@ -22,6 +22,8 @@ export class SidebarComponent {
   get isOpen(): boolean {
     return this._sidebarOpen;
   }
+
+  @Output() logoutRequest = new EventEmitter<void>();
 
   showLogoutConfirm = false;
 
@@ -57,16 +59,6 @@ export class SidebarComponent {
   }
 
   openLogoutConfirm() {
-    this.showLogoutConfirm = true;
-  }
-
-  confirmLogout() {
-    this.showLogoutConfirm = false;
-    this.userAuthService.clear();
-    this.router.navigate(['/']);
-  }
-
-  cancelLogout() {
-    this.showLogoutConfirm = false;
+    this.logoutRequest.emit();
   }
 }

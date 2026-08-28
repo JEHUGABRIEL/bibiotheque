@@ -3,6 +3,8 @@ import { Router, NavigationStart, NavigationEnd } from '@angular/router';
 import { UserAuthService } from './_service/user-auth.service';
 import { ThemeService } from './_service/theme.service';
 import { TranslationService } from './_service/translation.service';
+import { SidebarComponent } from './sidebar/sidebar.component';
+import { ViewChild } from '@angular/core';
 import { filter } from 'rxjs';
 
 @Component({
@@ -52,5 +54,22 @@ export class AppComponent implements OnInit {
 
   closeSidebar() {
     this.sidebarOpen = false;
+  }
+
+  // Logout confirm
+  showLogoutConfirm = false;
+
+  onLogoutRequest() {
+    this.showLogoutConfirm = true;
+  }
+
+  confirmLogout() {
+    this.showLogoutConfirm = false;
+    this.userAuthService.clear();
+    this.router.navigate(['/']);
+  }
+
+  cancelLogout() {
+    this.showLogoutConfirm = false;
   }
 }

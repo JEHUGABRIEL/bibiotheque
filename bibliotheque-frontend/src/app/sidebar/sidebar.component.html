@@ -85,16 +85,3 @@
     </button>
   </div>
 </aside>
-
-<!-- Modal confirmation déconnexion -->
-<app-confirm-modal
-  [open]="showLogoutConfirm"
-  [title]="t.t('sidebar.logout')"
-  [message]="t.t('sidebar.logout.confirm')"
-  [confirmLabel]="t.t('sidebar.logout')"
-  [cancelLabel]="t.t('btn.cancel')"
-  [danger]="true"
-  iconBg="linear-gradient(135deg, #dc3545, #ff6b7a)"
-  (confirm)="confirmLogout()"
-  (cancel)="cancelLogout()">
-</app-confirm-modal>

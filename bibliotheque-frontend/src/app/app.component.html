@@ -47,7 +47,8 @@
 
   <!-- Sidebar -->
   <app-sidebar *ngIf="isLoggedIn"
-               [sidebarOpen]="sidebarOpen"></app-sidebar>
+               [sidebarOpen]="sidebarOpen"
+               (logoutRequest)="onLogoutRequest()"></app-sidebar>
 
   <!-- Top navbar (when logged in) -->
   <nav class="top-navbar" *ngIf="isLoggedIn">
@@ -72,3 +73,16 @@
     <router-outlet></router-outlet>
   </main>
 </div>
+
+<!-- Logout confirm modal (outside sidebar to avoid z-index issues on mobile) -->
+<app-confirm-modal
+  [open]="showLogoutConfirm"
+  [title]="translationService.t('sidebar.logout')"
+  [message]="translationService.t('sidebar.logout.confirm')"
+  [confirmLabel]="translationService.t('sidebar.logout')"
+  [cancelLabel]="translationService.t('btn.cancel')"
+  [danger]="true"
+  iconBg="linear-gradient(135deg, #dc3545, #ff6b7a)"
+  (confirm)="confirmLogout()"
+  (cancel)="cancelLogout()">
+</app-confirm-modal>

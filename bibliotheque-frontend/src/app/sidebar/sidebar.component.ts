@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, HostBinding, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserAuthService } from '../_service/user-auth.service';
 import { UsersService } from '../_service/users.service';
@@ -10,7 +10,18 @@ import { UsersService } from '../_service/users.service';
 })
 export class SidebarComponent {
 
-  @Input() sidebarOpen = false;
+  private _sidebarOpen = false;
+
+  @Input()
+  set sidebarOpen(value: boolean) {
+    this._sidebarOpen = value;
+  }
+
+  @HostBinding('class.sidebar-open')
+  get isOpen(): boolean {
+    return this._sidebarOpen;
+  }
+
   showLogoutConfirm = false;
 
   constructor(

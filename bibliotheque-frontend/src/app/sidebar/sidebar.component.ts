@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserAuthService } from '../_service/user-auth.service';
 import { UsersService } from '../_service/users.service';
@@ -10,7 +10,7 @@ import { UsersService } from '../_service/users.service';
 })
 export class SidebarComponent {
 
-  @Output() toggleSidebar = new EventEmitter<void>();
+  @Input() sidebarOpen = false;
 
   constructor(
     public userService: UsersService,

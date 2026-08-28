@@ -514,3 +514,89 @@ body {
   color: var(--text-secondary);
   margin-top: 0.2rem;
 }
+
+/* ============================================
+   RESPONSIVE — Tables
+   ============================================ */
+
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-wrap: wrap;
+  }
+
+  .page-header-icon {
+    display: none;
+  }
+
+  .page-header h2 {
+    font-size: 1.2rem;
+  }
+
+  .data-table thead th {
+    font-size: 0.68rem;
+    padding: 0.7rem 0.75rem;
+  }
+
+  .data-table tbody td {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .btn-action {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.75rem;
+  }
+
+  .btn-action-outline {
+    display: none;
+  }
+
+  .empty-state, .error-state {
+    padding: 2.5rem 1rem;
+  }
+
+  .empty-state svg, .error-state svg {
+    width: 48px;
+    height: 48px;
+  }
+
+  .form-card {
+    padding: 1.5rem;
+  }
+
+  .modal-form .form-row-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 1rem;
+  }
+
+  .stat-card-value {
+    font-size: 1.2rem;
+  }
+}
+
+/* ============================================
+   RESPONSIVE — Modal mobile fullscreen
+   ============================================ */
+
+@media (max-width: 600px) {
+  .modal-container {
+    max-width: 100% !important;
+    margin: 0 !important;
+    border-radius: 16px 16px 0 0 !important;
+    max-height: 85vh !important;
+    align-self: flex-end !important;
+  }
+}

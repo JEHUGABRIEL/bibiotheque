@@ -1,4 +1,4 @@
-<aside class="sidebar">
+<aside class="sidebar" *ngIf="isLoggedIn">
   <!-- Brand -->
   <div class="sidebar-brand">
     <div class="brand-icon">
@@ -69,7 +69,7 @@
   </nav>
 
   <!-- User info + Logout -->
-  <div class="sidebar-footer" *ngIf="isLoggedIn">
+  <div class="sidebar-footer">
     <div class="user-info">
       <div class="user-avatar">{{ userInitial }}</div>
       <div class="user-details">

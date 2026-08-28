@@ -10,6 +10,7 @@
   left: 0;
   z-index: 100;
   overflow-y: auto;
+  transition: transform 0.25s ease;
 }
 
 /* Brand */
@@ -103,11 +104,13 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  overflow: hidden;
 }
 
 .user-avatar {
   width: 34px;
   height: 34px;
+  min-width: 34px;
   background: linear-gradient(135deg, #4f6df5, #7c4dff);
   border-radius: 50%;
   display: flex;
@@ -121,12 +124,16 @@
 .user-details {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .user-name {
   font-size: 0.82rem;
   font-weight: 600;
   color: #e8e9ed;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-role {
@@ -137,6 +144,7 @@
 .btn-logout {
   width: 34px;
   height: 34px;
+  min-width: 34px;
   border: none;
   border-radius: 8px;
   background: rgba(220, 53, 69, 0.1);
@@ -150,4 +158,33 @@
 
 .btn-logout:hover {
   background: rgba(220, 53, 69, 0.2);
+}
+
+/* ============================================
+   RESPONSIVE — Tablet: sidebar still visible
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
+}
+
+/* ============================================
+   RESPONSIVE — Mobile: same slide behavior
+   ============================================ */
+
+@media (max-width: 768px) {
+  .sidebar {
+    transform: translateX(-100%);
+    z-index: 100;
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+  }
 }

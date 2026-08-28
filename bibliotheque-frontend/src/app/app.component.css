@@ -1,12 +1,137 @@
+/* ============================================
+   LAYOUT — Desktop (sidebar visible)
+   ============================================ */
+
 .app-layout {
-  display: flex;
   min-height: 100vh;
+  background: #0f1117;
 }
 
 .app-main {
-  flex: 1;
-  margin-left: 260px;
   padding: 2rem 2.5rem;
   min-height: 100vh;
   background: #0f1117;
+  transition: margin-left 0.2s ease;
+}
+
+/* When sidebar is present (desktop) */
+.has-sidebar .app-main {
+  margin-left: 260px;
+}
+
+/* When no sidebar (login page, not connected) */
+.main-full {
+  margin-left: 0;
+  max-width: 100%;
+}
+
+/* ============================================
+   MOBILE HEADER (hidden on desktop)
+   ============================================ */
+
+.mobile-header {
+  display: none;
+}
+
+/* ============================================
+   SIDEBAR OVERLAY (hidden on desktop)
+   ============================================ */
+
+.sidebar-overlay {
+  display: none;
+}
+
+/* ============================================
+   RESPONSIVE — Tablet (< 1024px)
+   ============================================ */
+
+@media (max-width: 1024px) {
+  .app-main {
+    padding: 1.5rem;
+  }
+
+  .has-sidebar .app-main {
+    margin-left: 0;
+  }
+}
+
+/* ============================================
+   RESPONSIVE — Mobile (< 768px)
+   ============================================ */
+
+@media (max-width: 768px) {
+  /* Show mobile header */
+  .mobile-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 200;
+    padding: 0 1rem;
+    height: 52px;
+    background: #13151f;
+    border-bottom: 1px solid #1e2130;
+  }
+
+  .hamburger {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #e8e9ed;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .hamburger:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .mobile-brand {
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #e8e9ed;
+  }
+
+  /* Sidebar overlay */
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+  }
+
+  /* Main content */
+  .app-main {
+    padding: 1rem;
+  }
+
+  .has-sidebar .app-main {
+    margin-left: 0;
+  }
+}
+
+/* ============================================
+   RESPONSIVE — Small mobile (< 480px)
+   ============================================ */
+
+@media (max-width: 480px) {
+  .app-main {
+    padding: 0.75rem;
+  }
+
+  .page-header {
+    flex-wrap: wrap;
+  }
+
+  .page-header-icon {
+    display: none;
+  }
 }

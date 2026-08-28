@@ -1,3 +1,22 @@
+<!-- Loading Page -->
+<div class="loading-page" *ngIf="loading">
+  <div class="loading-content">
+    <div class="loading-logo">
+      <div class="loading-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492z"/>
+        </svg>
+      </div>
+      <h1 class="loading-title">Bibliothèque</h1>
+    </div>
+    <div class="loading-spinner">
+      <div class="spinner-ring"></div>
+    </div>
+    <p class="loading-text">Chargement en cours…</p>
+  </div>
+</div>
+
+<!-- App Layout -->
 <div class="app-layout" [class.has-sidebar]="isLoggedIn">
 
   <!-- Mobile top bar (visible only when logged in) -->

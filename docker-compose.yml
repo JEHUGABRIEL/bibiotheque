@@ -1,48 +1,19 @@
 services:
-  db:
-    image: mysql:8.0
-    environment:
-      # Le mot de passe vient d'une variable d'environnement (défaut : mysql,
-      # comme dans application.properties). Surchargeable via un fichier .env.
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-mysql}
-      MYSQL_DATABASE: bibliotheque
-    volumes:
-      # Volume nommé : les données survivent à `docker compose down` puis `up`.
-      - db_data:/var/lib/mysql
-    healthcheck:
-      # Vrai healthcheck : le backend ne démarre que quand MySQL répond vraiment.
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-      start_period: 15s
-    restart: unless-stopped
-
   backend:
     build: ./bibliotheque-backend
     environment:
-      # On surcharge application.properties par variables d'environnement,
-      # sans toucher au fichier. `db` = nom du service dans le réseau compose.
-      SPRING_DATASOURCE_URL: "jdbc:mysql://db:3306/bibliotheque?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true"
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_ROOT_PASSWORD:-mysql}
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://host.docker.internal:5432/bibliotheque"
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-Mentalist1986}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
-      # Publié sur l'hôte : c'est ce port que le navigateur appelle en dur
-      # (http://localhost:8080) — le frontend tourne dans le navigateur,
-      # pas dans un conteneur.
       - "8080:8080"
-    depends_on:
-      db:
-        condition: service_healthy
     restart: on-failure
 
   frontend:
     build: ./bibliotheque-frontend
     ports:
-      # nginx écoute sur 80 dans le conteneur, exposé sur 4200 pour l'hôte.
       - "4200:80"
     depends_on:
       - backend
-
-volumes:
-  db_data:

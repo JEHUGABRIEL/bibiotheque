@@ -32,6 +32,10 @@
             <a routerLink="/return-book" routerLinkActive="active" class="nav-link" *ngIf="userService.roleMatch(['User'])">Return Books</a>
           </li>
 
+          <li class="nav-item">
+            <a routerLink="/reservations" routerLinkActive="active" class="nav-link" *ngIf="userService.roleMatch(['Admin'])">Réservations</a>
+          </li>
+
           <li class="nav-item right-text" *ngIf="isLoggedIn()">
             <div class="nav-link disabled text-right">
               <strong>

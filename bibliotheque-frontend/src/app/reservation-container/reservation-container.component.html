@@ -1,0 +1,25 @@
+<div class="container mt-4">
+  <h2 class="mb-4">Réservations</h2>
+
+  <!-- Formulaire de création -->
+  <app-reservation-form
+    [books]="books"
+    [users]="users"
+    [submitting]="formSubmitting"
+    [errorMessage]="formError"
+    [successMessage]="formSuccess"
+    (submitRequest)="onSubmitReservation($event)">
+  </app-reservation-form>
+
+  <!-- Liste des réservations -->
+  <app-reservation-list
+    [reservations]="reservations"
+    [loading]="loading"
+    [error]="error"
+    [bookNames]="bookNames"
+    [userNames]="userNames"
+    (filterChange)="onFilterChange($event)"
+    (cancelRequest)="onCancelReservation($event)"
+    (retryRequest)="onRetry()">
+  </app-reservation-list>
+</div>

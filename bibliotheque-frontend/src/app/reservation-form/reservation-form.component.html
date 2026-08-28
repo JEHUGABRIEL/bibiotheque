@@ -1,0 +1,46 @@
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">Nouvelle réservation</h5>
+  </div>
+  <div class="card-body">
+    <!-- Message d'erreur métier (409, 400, 404) -->
+    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
+      {{ errorMessage }}
+    </div>
+
+    <!-- Message de succès -->
+    <div *ngIf="successMessage" class="alert alert-success" role="alert">
+      {{ successMessage }}
+    </div>
+
+    <form (ngSubmit)="onSubmit()">
+      <div class="mb-3">
+        <label for="bookSelect" class="form-label">Livre</label>
+        <select id="bookSelect" class="form-select"
+                [(ngModel)]="selectedBookId" name="bookId">
+          <option [ngValue]="null" disabled>-- Sélectionner un livre --</option>
+          <option *ngFor="let book of books" [ngValue]="book.bookId">
+            {{ book.bookName }} — {{ book.bookAuthor }}
+          </option>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label for="userSelect" class="form-label">Adhérent</label>
+        <select id="userSelect" class="form-select"
+                [(ngModel)]="selectedUserId" name="userId">
+          <option [ngValue]="null" disabled>-- Sélectionner un adhérent --</option>
+          <option *ngFor="let user of users" [ngValue]="user.userId">
+            {{ user.name }}
+          </option>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary"
+              [disabled]="!isFormValid || submitting">
+        <span *ngIf="submitting" class="spinner-border spinner-border-sm me-1"></span>
+        {{ submitting ? 'Création…' : 'Créer la réservation' }}
+      </button>
+    </form>
+  </div>
+</div>

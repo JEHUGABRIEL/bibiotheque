@@ -1,0 +1,61 @@
+<!-- Filtre par statut -->
+<div class="mb-3">
+  <label class="form-label fw-bold">Filtrer par statut</label>
+  <select class="form-select" (change)="onFilterChange($any($event.target).value)">
+    <option value="">Tous</option>
+    <option *ngFor="let s of statuts" [value]="s">{{ getStatutLabel(s) }}</option>
+  </select>
+</div>
+
+<!-- État de chargement -->
+<div *ngIf="loading" class="text-center my-5">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">Chargement…</span>
+  </div>
+  <p class="mt-2 text-muted">Chargement des réservations…</p>
+</div>
+
+<!-- État d'erreur -->
+<div *ngIf="error && !loading" class="alert alert-danger d-flex align-items-center" role="alert">
+  <div class="flex-grow-1">
+    <strong>Erreur :</strong> {{ error }}
+  </div>
+  <button class="btn btn-outline-danger btn-sm" (click)="onRetry()">Réessayer</button>
+</div>
+
+<!-- Liste vide -->
+<div *ngIf="!loading && !error && reservations.length === 0" class="alert alert-info">
+  Aucune réservation
+</div>
+
+<!-- Tableau -->
+<div *ngIf="!loading && !error && reservations.length > 0" class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead class="table-dark">
+      <tr>
+        <th>Livre</th>
+        <th>Adhérent</th>
+        <th>Statut</th>
+        <th>Date de réservation</th>
+        <th>Date d'expiration</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let r of reservations">
+        <td>{{ bookNames.get(r.bookId) || 'Livre #' + r.bookId }}</td>
+        <td>{{ userNames.get(r.userId) || 'Adhérent #' + r.userId }}</td>
+        <td><span [class]="getStatutClass(r.statut)">{{ getStatutLabel(r.statut) }}</span></td>
+        <td>{{ formatDate(r.dateReservation) }}</td>
+        <td>{{ formatDate(r.dateExpiration) }}</td>
+        <td>
+          <button *ngIf="canCancel(r.statut)"
+                  class="btn btn-outline-danger btn-sm"
+                  (click)="onCancel(r)">
+            Annuler
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

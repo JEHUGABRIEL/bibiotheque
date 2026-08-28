@@ -6,6 +6,7 @@ import com.ibizabroker.bibliotheque.entity.JwtResponse;
 import com.ibizabroker.bibliotheque.entity.Users;
 import com.ibizabroker.bibliotheque.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -22,14 +23,15 @@ import java.util.Set;
 @Service
 public class JwtService implements UserDetailsService {
 
-    @Autowired
-    private JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil;
+    private final UsersRepository userDao;
+    private final AuthenticationManager authenticationManager;
 
-    @Autowired
-    private UsersRepository userDao;
-
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    public JwtService(JwtUtil jwtUtil, UsersRepository userDao, @Lazy AuthenticationManager authenticationManager) {
+        this.jwtUtil = jwtUtil;
+        this.userDao = userDao;
+        this.authenticationManager = authenticationManager;
+    }
 
     public JwtResponse createJwtToken(JwtRequest jwtRequest) throws Exception {
         String username = jwtRequest.getUsername();
@@ -58,7 +60,7 @@ public class JwtService implements UserDetailsService {
         }
     }
 
-    private Set getAuthority(Users user) {
+    private Set<SimpleGrantedAuthority> getAuthority(Users user) {
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
         user.getRole().forEach(role -> {
             authorities.add(new SimpleGrantedAuthority("ROLE_" + role.getRoleName()));

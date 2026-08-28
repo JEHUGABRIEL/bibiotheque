@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserAuthService } from '../_service/user-auth.service';
 import { UsersService } from '../_service/users.service';
@@ -11,6 +11,7 @@ import { UsersService } from '../_service/users.service';
 export class SidebarComponent {
 
   @Input() sidebarOpen = false;
+  showLogoutConfirm = false;
 
   constructor(
     public userService: UsersService,
@@ -42,8 +43,17 @@ export class SidebarComponent {
     return this.router.url === path || this.router.url.startsWith(path + '/');
   }
 
-  logout() {
+  openLogoutConfirm() {
+    this.showLogoutConfirm = true;
+  }
+
+  confirmLogout() {
+    this.showLogoutConfirm = false;
     this.userAuthService.clear();
     this.router.navigate(['/']);
+  }
+
+  cancelLogout() {
+    this.showLogoutConfirm = false;
   }
 }

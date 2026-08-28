@@ -161,21 +161,7 @@
 }
 
 /* ============================================
-   RESPONSIVE — Tablet: sidebar still visible
-   ============================================ */
-
-@media (max-width: 1024px) {
-  .sidebar {
-    transform: translateX(-100%);
-  }
-
-  .sidebar.sidebar-open {
-    transform: translateX(0);
-  }
-}
-
-/* ============================================
-   RESPONSIVE — Mobile: same slide behavior
+   RESPONSIVE — Mobile: slide-in uniquement
    ============================================ */
 
 @media (max-width: 768px) {

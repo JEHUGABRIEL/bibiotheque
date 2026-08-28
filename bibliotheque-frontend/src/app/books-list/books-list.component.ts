@@ -29,6 +29,15 @@ export class BooksListComponent implements OnInit {
   editError: string | null = null;
   editSuccess: string | null = null;
 
+  // Delete confirmation
+  showDeleteConfirm = false;
+  bookToDelete: Books | null = null;
+
+  get deleteMessage(): string {
+    if (!this.bookToDelete) return '';
+    return 'Voulez-vous vraiment supprimer \u00AB ' + this.bookToDelete.bookName + ' \u00BB ? Cette action est irréversible.';
+  }
+
   constructor(private booksService: BooksService,
     private router: Router) { }
 
@@ -53,10 +62,25 @@ export class BooksListComponent implements OnInit {
     this.router.navigate(['update-book', bookId]);
   }
 
-  deleteBook(bookId: number) {
-    this.booksService.deleteBook(bookId).subscribe( data=> {
-      this.getBooks();
+  openDeleteConfirm(book: Books) {
+    this.bookToDelete = book;
+    this.showDeleteConfirm = true;
+  }
+
+  confirmDelete() {
+    if (!this.bookToDelete) return;
+    const bookId = this.bookToDelete.bookId;
+    this.showDeleteConfirm = false;
+    this.bookToDelete = null;
+    this.booksService.deleteBook(bookId).subscribe({
+      next: () => this.getBooks(),
+      error: () => this.getBooks()
     });
+  }
+
+  cancelDelete() {
+    this.showDeleteConfirm = false;
+    this.bookToDelete = null;
   }
 
   bookDetails(bookId: number) {

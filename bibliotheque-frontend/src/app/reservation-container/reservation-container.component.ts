@@ -31,6 +31,11 @@ export class ReservationContainerComponent implements OnInit {
   selectedBookId: number | null = null;
   selectedUserId: number | null = null;
 
+  // Cancel confirmation
+  showCancelConfirm = false;
+  reservationToCancel: Reservation | null = null;
+  cancelError: string | null = null;
+
   constructor(
     private reservationService: ReservationService,
     private booksService: BooksService,
@@ -141,11 +146,20 @@ export class ReservationContainerComponent implements OnInit {
     });
   }
 
-  onCancelReservation(reservation: Reservation) {
-    const confirmed = confirm('Voulez-vous vraiment annuler cette réservation ?');
-    if (!confirmed) return;
+  // --- Cancel confirmation ---
+  openCancelConfirm(reservation: Reservation) {
+    this.reservationToCancel = reservation;
+    this.cancelError = null;
+    this.showCancelConfirm = true;
+  }
 
-    this.reservationService.annuler(reservation.id).subscribe({
+  confirmCancel() {
+    if (!this.reservationToCancel) return;
+    const id = this.reservationToCancel.id;
+    this.showCancelConfirm = false;
+    this.reservationToCancel = null;
+
+    this.reservationService.annuler(id).subscribe({
       next: (updated) => {
         const index = this.reservations.findIndex(r => r.id === updated.id);
         if (index >= 0) {
@@ -153,9 +167,14 @@ export class ReservationContainerComponent implements OnInit {
         }
       },
       error: (err: HttpErrorResponse) => {
-        const msg = err.error?.message || `Erreur ${err.status}`;
-        alert(msg);
+        this.cancelError = err.error?.message || `Erreur ${err.status}`;
       }
     });
+  }
+
+  cancelModalClose() {
+    this.showCancelConfirm = false;
+    this.reservationToCancel = null;
+    this.cancelError = null;
   }
 }

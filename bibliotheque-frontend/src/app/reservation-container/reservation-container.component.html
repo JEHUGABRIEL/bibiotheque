@@ -25,7 +25,7 @@
   [bookNames]="bookNames"
   [userNames]="userNames"
   (filterChange)="onFilterChange($event)"
-  (cancelRequest)="onCancelReservation($event)"
+  (cancelRequest)="openCancelConfirm($event)"
   (retryRequest)="onRetry()">
 </app-reservation-list>
 
@@ -74,3 +74,20 @@
     </div>
   </form>
 </app-modal>
+
+<!-- Modal confirmation annulation -->
+<app-confirm-modal
+  [open]="showCancelConfirm"
+  title="Annuler la réservation"
+  message="Voulez-vous vraiment annuler cette réservation ?"
+  confirmLabel="Annuler la réservation"
+  cancelLabel="Rester"
+  [danger]="true"
+  iconBg="linear-gradient(135deg, #dc3545, #ff6b7a)"
+  (confirm)="confirmCancel()"
+  (cancel)="cancelModalClose()">
+</app-confirm-modal>
+
+<div *ngIf="cancelError" class="alert-banner alert-error" style="margin-top: 1rem;">
+  {{ cancelError }}
+</div>

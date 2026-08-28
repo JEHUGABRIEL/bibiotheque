@@ -43,6 +43,7 @@
 
 /* ============================================
    RESPONSIVE — Tablet (< 1024px)
+   Sidebar still visible, less padding
    ============================================ */
 
 @media (max-width: 1024px) {
@@ -50,13 +51,15 @@
     padding: 1.5rem;
   }
 
+  /* Sidebar still visible, no margin needed — CSS handles it */
   .has-sidebar .app-main {
-    margin-left: 0;
+    margin-left: 260px;
   }
 }
 
 /* ============================================
    RESPONSIVE — Mobile (< 768px)
+   Sidebar hidden, hamburger toggle
    ============================================ */
 
 @media (max-width: 768px) {

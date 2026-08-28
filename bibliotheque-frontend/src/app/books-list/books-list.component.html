@@ -52,7 +52,7 @@
           <div class="d-flex gap-2">
             <button (click)="bookDetails(book.bookId)" class="btn-action btn-action-primary">Voir</button>
             <button (click)="openEditModal(book)" class="btn-action btn-action-outline">Modifier</button>
-            <button (click)="deleteBook(book.bookId)" class="btn-action btn-action-danger">Supprimer</button>
+            <button (click)="openDeleteConfirm(book)" class="btn-action btn-action-danger">Supprimer</button>
           </div>
         </td>
       </tr>
@@ -160,3 +160,17 @@
     </div>
   </form>
 </app-modal>
+
+<!-- Modal confirmation suppression -->
+<app-confirm-modal
+  [open]="showDeleteConfirm"
+  title="Supprimer le livre"
+  [message]="deleteMessage"
+  confirmLabel="Supprimer"
+  confirmLabel="Supprimer"
+  cancelLabel="Annuler"
+  [danger]="true"
+  iconBg="linear-gradient(135deg, #dc3545, #ff6b7a)"
+  (confirm)="confirmDelete()"
+  (cancel)="cancelDelete()">
+</app-confirm-modal>

@@ -29,6 +29,7 @@ import { ReservationListComponent } from './reservation-list/reservation-list.co
 import { ReservationFormComponent } from './reservation-form/reservation-form.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { ModalComponent } from './_shared/modal.component';
+import { ConfirmModalComponent } from './_shared/confirm-modal.component';
 
 @NgModule({
   declarations: [
@@ -53,6 +54,7 @@ import { ModalComponent } from './_shared/modal.component';
     ReservationFormComponent,
     SidebarComponent,
     ModalComponent,
+    ConfirmModalComponent,
   ],
   imports: [
     BrowserModule,

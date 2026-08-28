@@ -1,22 +1,37 @@
-<div class="card mb-4">
-  <div class="card-header">
-    <h5 class="mb-0">Nouvelle réservation</h5>
+<div class="reservation-form-card">
+  <div class="form-header">
+    <div class="form-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.352c.881-.45 2.303-.783 3.693-.783s2.813.333 3.693.783a.5.5 0 0 0 .707-.352v-11a.5.5 0 0 0-.276-.447A10 10 0 0 0 8 1.783"/>
+      </svg>
+    </div>
+    <h3>Nouvelle réservation</h3>
   </div>
-  <div class="card-body">
-    <!-- Message d'erreur métier (409, 400, 404) -->
-    <div *ngIf="errorMessage" class="alert alert-danger" role="alert">
-      {{ errorMessage }}
-    </div>
 
-    <!-- Message de succès -->
-    <div *ngIf="successMessage" class="alert alert-success" role="alert">
-      {{ successMessage }}
-    </div>
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="error-banner">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+      <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+    </svg>
+    <span>{{ errorMessage }}</span>
+  </div>
 
-    <form (ngSubmit)="onSubmit()">
-      <div class="mb-3">
-        <label for="bookSelect" class="form-label">Livre</label>
-        <select id="bookSelect" class="form-select"
+  <div *ngIf="successMessage" class="success-banner">
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0m-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+    </svg>
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <form (ngSubmit)="onSubmit()">
+    <div class="form-group">
+      <label for="bookSelect" class="form-label">Livre</label>
+      <div class="input-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.352c.881-.45 2.303-.783 3.693-.783s2.813.333 3.693.783a.5.5 0 0 0 .707-.352v-11a.5.5 0 0 0-.276-.447A10 10 0 0 0 8 1.783"/>
+        </svg>
+        <select id="bookSelect" class="form-control"
                 [(ngModel)]="selectedBookId" name="bookId">
           <option [ngValue]="null" disabled>-- Sélectionner un livre --</option>
           <option *ngFor="let book of books" [ngValue]="book.bookId">
@@ -24,10 +39,15 @@
           </option>
         </select>
       </div>
+    </div>
 
-      <div class="mb-3">
-        <label for="userSelect" class="form-label">Adhérent</label>
-        <select id="userSelect" class="form-select"
+    <div class="form-group">
+      <label for="userSelect" class="form-label">Adhérent</label>
+      <div class="input-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4"/>
+        </svg>
+        <select id="userSelect" class="form-control"
                 [(ngModel)]="selectedUserId" name="userId">
           <option [ngValue]="null" disabled>-- Sélectionner un adhérent --</option>
           <option *ngFor="let user of users" [ngValue]="user.userId">
@@ -35,12 +55,12 @@
           </option>
         </select>
       </div>
+    </div>
 
-      <button type="submit" class="btn btn-primary"
-              [disabled]="!isFormValid || submitting">
-        <span *ngIf="submitting" class="spinner-border spinner-border-sm me-1"></span>
-        {{ submitting ? 'Création…' : 'Créer la réservation' }}
-      </button>
-    </form>
-  </div>
+    <button type="submit" class="btn-submit"
+            [disabled]="!isFormValid || submitting">
+      <span *ngIf="submitting" class="spinner"></span>
+      {{ submitting ? 'Création…' : 'Créer la réservation' }}
+    </button>
+  </form>
 </div>

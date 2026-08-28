@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -73,6 +74,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleConflict(ConflictException e) {
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("message", e.getMessage()));
+    }
+
+    /**
+     * 409 — Violation de contrainte DB (clé dupliquée, FK, etc.)
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, String>> handleDataIntegrity(DataIntegrityViolationException e) {
+        log.warn("Violation de contrainte DB: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(Map.of("message", "Cette opération viole une contrainte de la base de données (doublon ou référence manquante)"));
     }
 
     /**

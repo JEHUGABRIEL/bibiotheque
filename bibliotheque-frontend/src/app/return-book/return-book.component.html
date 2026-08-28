@@ -1,25 +1,46 @@
-<h2>List of books to be returned</h2>
-<table class="table table-success table-striped">
+<div class="page-header">
+  <div class="page-header-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+      <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+      <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+    </svg>
+  </div>
+  <div>
+    <h2>Retourner un livre</h2>
+    <p>Livres en cours d'emprunt</p>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="data-table">
     <thead>
-        <tr>
-            <th> Book ID </th>
-            <th> Issue Date </th>
-            <th> Return Date </th>
-            <th> Overdue Date </th>
-            <th> Action </th>
-        </tr>
+      <tr>
+        <th>ID Livre</th>
+        <th>Date d'emprunt</th>
+        <th>Date de retour</th>
+        <th>Date limite</th>
+        <th>Statut</th>
+        <th>Action</th>
+      </tr>
     </thead>
     <tbody>
-        <tr *ngFor="let b of borrow">
-            <td> {{ b.bookId }} </td>
-            <td> {{ b.issueDate }} </td>
-            <td> {{ b.returnDate }} </td>
-            <td> {{ b.dueDate }} </td>
-            <td>
-                <div *ngIf="b.returnDate === null">
-                    <button (click) = "returnBook(b.borrowId)" class="btn btn-success"> Return </button>
-                </div>
-            </td>
-        </tr>
+      <tr *ngFor="let b of borrow">
+        <td class="text-muted-custom">{{ b.bookId }}</td>
+        <td>{{ b.issueDate }}</td>
+        <td>{{ b.returnDate || '—' }}</td>
+        <td>{{ b.dueDate }}</td>
+        <td>
+          <span [class]="b.returnDate === null ? 'status-badge status-en-attente' : 'status-badge status-honoree'">
+            {{ b.returnDate === null ? 'En cours' : 'Retourné' }}
+          </span>
+        </td>
+        <td>
+          <button *ngIf="b.returnDate === null"
+                  (click)="returnBook(b.borrowId)" class="btn-action btn-action-warning">
+            Retourner
+          </button>
+        </td>
+      </tr>
     </tbody>
-</table>
+  </table>
+</div>

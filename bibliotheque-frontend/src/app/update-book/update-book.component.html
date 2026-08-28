@@ -1,27 +1,60 @@
-<div class="container col-md-6 offset-mid-3">
-    <h3> Edit Book </h3>
-    <form (ngSubmit) = "onSubmit()">
+<div style="display: flex; justify-content: center; min-height: calc(100vh - 60px); padding: 2rem;">
+  <div class="form-card">
+    <div class="form-header" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+      <div style="width: 60px; height: 60px; min-width: 60px; background: linear-gradient(135deg, #f59e0b, #f97316); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5v-1a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.293.458"/>
+        </svg>
+      </div>
+      <div>
+        <h3 style="font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.3rem; color: #e8e9ed; margin: 0;">Modifier le livre</h3>
+      </div>
+    </div>
 
-        <div class="form-group">
-            <label style="margin-bottom: 10px"> Book Name </label>
-            <input type="text" class="form-control" style="margin-bottom: 10px" id="bookName" [(ngModel)] = "book.bookName" name="bookName">
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-group">
+        <label class="form-label">Titre</label>
+        <div class="input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492z"/>
+          </svg>
+          <input type="text" class="form-control" id="bookName" [(ngModel)]="book.bookName" name="bookName">
         </div>
+      </div>
 
-        <div class="form-group">
-            <label style="margin-bottom: 10px"> Author </label>
-            <input type="text" class="form-control" style="margin-bottom: 10px" id="bookAuthor" [(ngModel)] = "book.bookAuthor" name="bookAuthor">
+      <div class="form-group">
+        <label class="form-label">Auteur</label>
+        <div class="input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0"/>
+          </svg>
+          <input type="text" class="form-control" id="bookAuthor" [(ngModel)]="book.bookAuthor" name="bookAuthor">
         </div>
+      </div>
 
-        <div class="form-group">
-            <label style="margin-bottom: 10px"> Genre </label>
-            <input type="text" class="form-control" style="margin-bottom: 10px" id="bookGenre" [(ngModel)] = "book.bookGenre" name="bookGenre">
+      <div class="form-group">
+        <label class="form-label">Genre</label>
+        <div class="input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M7 2.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+          </svg>
+          <input type="text" class="form-control" id="bookGenre" [(ngModel)]="book.bookGenre" name="bookGenre">
         </div>
+      </div>
 
-        <div class="form-group">
-            <label style="margin-bottom: 10px"> Number of Copies </label>
-            <input type="text" class="form-control" style="margin-bottom: 10px" id="noOfCopies" [(ngModel)] = "book.noOfCopies" name="noOfCopies">
+      <div class="form-group">
+        <label class="form-label">Exemplaires</label>
+        <div class="input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M2 2v4.586l7 7L13.586 9l-7-7z"/>
+          </svg>
+          <input type="number" class="form-control" id="noOfCopies" [(ngModel)]="book.noOfCopies" name="noOfCopies" min="0">
         </div>
+      </div>
 
-        <button class="btn btn-success" type="submit"> Submit </button>
+      <button type="submit" class="btn-submit" style="width: 100%; padding: 0.8rem; margin-top: 0.5rem; background: linear-gradient(135deg, #f59e0b, #f97316); border: none; border-radius: 10px; color: #fff; font-family: 'Montserrat', sans-serif; font-weight: 600; font-size: 1rem; cursor: pointer;">
+        Enregistrer les modifications
+      </button>
     </form>
+  </div>
 </div>

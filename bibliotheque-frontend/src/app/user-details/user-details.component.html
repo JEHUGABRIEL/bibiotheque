@@ -1,22 +1,36 @@
-<h2>Borrow history of {{ user.name }}</h2>
-<table class="table table-info table-striped">
+<div class="page-header">
+  <div class="page-header-icon" style="background: linear-gradient(135deg, #6f42c1, #a855f7);">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1z"/>
+    </svg>
+  </div>
+  <div>
+    <h2>Historique — {{ user.name }}</h2>
+    <p>Emprunts de cet adhérent</p>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="data-table">
     <thead>
-        <tr>
-            <th> Book ID </th>
-            <th> Issue Date </th>
-            <th> Return Date </th>
-        </tr>
+      <tr>
+        <th>ID Livre</th>
+        <th>Date d'emprunt</th>
+        <th>Date de retour</th>
+        <th>Statut</th>
+      </tr>
     </thead>
     <tbody>
-        <tr *ngFor="let borrower of borrow">
-            <td> {{ borrower.bookId }} </td>
-            <td> {{ borrower.issueDate }} </td>
-            <div *ngIf="borrower.returnDate != null">
-                <td> {{ borrower.returnDate }} </td>
-            </div>
-            <div *ngIf="borrower.returnDate === null">
-                <td> Book not returned yet </td>
-            </div>
-        </tr>
+      <tr *ngFor="let borrower of borrow">
+        <td class="text-muted-custom">{{ borrower.bookId }}</td>
+        <td>{{ borrower.issueDate }}</td>
+        <td>{{ borrower.returnDate || '—' }}</td>
+        <td>
+          <span [class]="borrower.returnDate !== null ? 'status-badge status-honoree' : 'status-badge status-en-attente'">
+            {{ borrower.returnDate !== null ? 'Retourné' : 'En cours' }}
+          </span>
+        </td>
+      </tr>
     </tbody>
-</table>
+  </table>
+</div>

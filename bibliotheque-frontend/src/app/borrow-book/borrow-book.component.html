@@ -1,25 +1,45 @@
-<h2>List of available books in the library</h2>
-<table class="table table-success table-striped">
+<div class="page-header">
+  <div class="page-header-icon" style="background: linear-gradient(135deg, #4f6df5, #7c4dff);">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492z"/>
+    </svg>
+  </div>
+  <div>
+    <h2>Emprunter un livre</h2>
+    <p>Livres disponibles dans la bibliothèque</p>
+  </div>
+</div>
+
+<div class="table-responsive">
+  <table class="data-table">
     <thead>
-        <tr>
-            <th> Book ID </th>
-            <th> Name </th>
-            <th> Author </th>
-            <th> Genre </th>
-            <th> Number of copies available </th>
-            <th> Actions </th>
-        </tr>
+      <tr>
+        <th>Titre</th>
+        <th>Auteur</th>
+        <th>Genre</th>
+        <th>Exemplaires</th>
+        <th>Action</th>
+      </tr>
     </thead>
     <tbody>
-        <tr *ngFor="let book of books">
-            <td> {{ book.bookId }} </td>
-            <td> {{ book.bookName }} </td>
-            <td> {{ book.bookAuthor }} </td>
-            <td> {{ book.bookGenre }} </td>
-            <td> {{ book.noOfCopies }} </td>
-            <td>
-                <button (click) = "borrowBook(book.bookId)" class="btn btn-success"> Borrow </button>
-            </td>
-        </tr>
+      <tr *ngFor="let book of books">
+        <td><strong>{{ book.bookName }}</strong></td>
+        <td>{{ book.bookAuthor }}</td>
+        <td>
+          <span class="status-badge status-disponible">{{ book.bookGenre }}</span>
+        </td>
+        <td>
+          <span [class]="book.noOfCopies > 0 ? 'status-badge status-disponible' : 'status-badge status-expiree'">
+            {{ book.noOfCopies }}
+          </span>
+        </td>
+        <td>
+          <button (click)="borrowBook(book.bookId)" class="btn-action btn-action-success"
+                  [disabled]="book.noOfCopies < 1">
+            Emprunter
+          </button>
+        </td>
+      </tr>
     </tbody>
-</table>
+  </table>
+</div>

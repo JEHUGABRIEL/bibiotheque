@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -24,6 +25,9 @@ public class WebSecurityConfiguration {
 
     @Autowired
     private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @Autowired
+    private CorsConfigurationSource corsConfigurationSource;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -35,6 +39,7 @@ public class WebSecurityConfiguration {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity, JwtService jwtService) throws Exception {
+        httpSecurity.cors(cors -> cors.configurationSource(corsConfigurationSource));
         httpSecurity.csrf(csrf -> csrf.disable());
         httpSecurity.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/authenticate", "/borrow/**", "/admin/books/").permitAll()

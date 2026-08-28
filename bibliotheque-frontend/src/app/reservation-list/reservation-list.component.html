@@ -1,9 +1,9 @@
 <!-- Filtre + Actions -->
 <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
-  <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Filtrer</label>
+  <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">{{ t.t('reservations.filter') }}</label>
   <select class="form-control" style="width: auto;"
           (change)="onFilterChange($any($event.target).value)">
-    <option value="">Tous les statuts</option>
+    <option value="">{{ t.t('reservations.filter.all') }}</option>
     <option *ngFor="let s of statuts" [value]="s">{{ getStatutLabel(s) }}</option>
   </select>
   <div style="flex: 1;"></div>
@@ -11,14 +11,14 @@
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
       <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
     </svg>
-    Nouvelle réservation
+    {{ t.t('reservations.add') }}
   </button>
 </div>
 
 <!-- État de chargement -->
 <div *ngIf="loading" class="loading-state">
   <div class="spinner"></div>
-  <p>Chargement des réservations…</p>
+  <p>{{ t.t('table.loading') }}</p>
 </div>
 
 <!-- État d'erreur -->
@@ -34,7 +34,7 @@
       <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
       <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
     </svg>
-    Réessayer
+    {{ t.t('btn.retry') }}
   </button>
 </div>
 
@@ -44,8 +44,8 @@
     <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z"/>
     <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858"/>
   </svg>
-  <h3>Aucune réservation</h3>
-  <p>Il n'y a pas de réservation pour le moment.</p>
+  <h3>{{ t.t('reservations.empty.title') }}</h3>
+  <p>{{ t.t('reservations.empty.text') }}</p>
 </div>
 
 <!-- Tableau -->
@@ -53,12 +53,12 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>Livre</th>
-        <th>Adhérent</th>
-        <th>Statut</th>
-        <th>Date de réservation</th>
-        <th>Date d'expiration</th>
-        <th>Action</th>
+        <th>{{ t.t('reservations.table.book') }}</th>
+        <th>{{ t.t('reservations.table.user') }}</th>
+        <th>{{ t.t('reservations.table.status') }}</th>
+        <th>{{ t.t('reservations.table.date reservation') }}</th>
+        <th>{{ t.t('reservations.table.date expiration') }}</th>
+        <th>{{ t.t('reservations.table.action') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -89,13 +89,13 @@
 <div *ngIf="!loading && !error && reservations.length > 0" class="table-footer">
   <div class="pagination">
     <button class="nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-      ‹ Préc
+      {{ t.t('pagination.prev') }}
     </button>
     <button *ngFor="let p of pageNumbers" class="page-btn" (click)="goToPage(p)" [class.active]="p === currentPage">
       {{ p }}
     </button>
     <button class="nav-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-      Suiv ›
+      {{ t.t('pagination.next') }}
     </button>
   </div>
 </div>

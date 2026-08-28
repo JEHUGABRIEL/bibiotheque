@@ -5,8 +5,8 @@
     </svg>
   </div>
   <div>
-    <h2>Liste des adhérents</h2>
-    <p>Inscrire, consulter et modifier des adhérents</p>
+    <h2>{{ t.t('users.title') }}</h2>
+    <p>{{ t.t('users.subtitle') }}</p>
   </div>
 </div>
 
@@ -16,14 +16,14 @@
       <path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H2s-1 0-1-1 1-4 6-4 6 3 6 4"/>
       <path fill-rule="evenodd" d="M13.5 5a.5.5 0 0 1 .5.5V7h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-1 0V8h-1.5a.5.5 0 0 1 0-1H13V5.5a.5.5 0 0 1 .5-.5"/>
     </svg>
-    Inscrire un adhérent
+    {{ t.t('users.add') }}
   </button>
 </div>
 
 <!-- Loading -->
 <div *ngIf="loading" class="loading-state">
   <div class="spinner"></div>
-  <p>Chargement…</p>
+  <p>{{ t.t('table.loading') }}</p>
 </div>
 
 <!-- Table -->
@@ -31,11 +31,11 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Nom</th>
-        <th>Identifiant</th>
-        <th>Rôle</th>
-        <th>Actions</th>
+        <th>{{ t.t('table.id') }}</th>
+        <th>{{ t.t('users.table.name') }}</th>
+        <th>{{ t.t('users.table.username') }}</th>
+        <th>{{ t.t('users.table.role') }}</th>
+        <th>{{ t.t('table.actions') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -45,7 +45,7 @@
         <td>{{ user.username }}</td>
         <td>
           <span [class]="user.role[0].roleName === 'Admin' ? 'status-badge status-honoree' : 'status-badge status-disponible'">
-            {{ user.role[0].roleName === 'Admin' ? 'Administrateur' : 'Adhérent' }}
+            {{ user.role[0].roleName === 'Admin' ? t.t('users.role.admin') : t.t('users.role.user') }}
           </span>
         </td>
         <td>
@@ -73,13 +73,13 @@
 <div *ngIf="!loading && users.length > 0" class="table-footer">
   <div class="pagination">
     <button class="nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-      ‹ Préc
+      {{ t.t('pagination.prev') }}
     </button>
     <button *ngFor="let p of pageNumbers" class="page-btn" (click)="goToPage(p)" [class.active]="p === currentPage">
       {{ p }}
     </button>
     <button class="nav-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-      Suiv ›
+      {{ t.t('pagination.next') }}
     </button>
   </div>
 </div>
@@ -89,34 +89,34 @@
   <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
     <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/>
   </svg>
-  <h3>Aucun adhérent</h3>
-  <p>Cliquez sur « Inscrire un adhérent » pour commencer.</p>
+  <h3>{{ t.t('users.empty.title') }}</h3>
+  <p>{{ t.t('users.empty.text') }}</p>
 </div>
 
 <!-- Modal: Inscrire un adhérent -->
-<app-modal [open]="showCreateModal" title="Inscrire un adhérent" iconColor="linear-gradient(135deg, #6f42c1, #a855f7)" (close)="showCreateModal = false">
+<app-modal [open]="showCreateModal" [title]="t.t('users.add.title')" iconColor="linear-gradient(135deg, #6f42c1, #a855f7)" (close)="showCreateModal = false">
   <form (ngSubmit)="submitCreate()" class="modal-form">
     <div class="form-group">
-      <label>Nom complet</label>
-      <input type="text" [(ngModel)]="newUser.name" name="name" placeholder="Prénom et nom" required>
+      <label>{{ t.t('users.name') }}</label>
+      <input type="text" [(ngModel)]="newUser.name" name="name" [placeholder]="t.t('users.name.placeholder')" required>
     </div>
     <div class="form-row-2">
       <div class="form-group">
-        <label>Identifiant</label>
-        <input type="text" [(ngModel)]="newUser.username" name="username" placeholder="Nom d'utilisateur" required>
+        <label>{{ t.t('users.username') }}</label>
+        <input type="text" [(ngModel)]="newUser.username" name="username" [placeholder]="t.t('users.username.placeholder')" required>
       </div>
       <div class="form-group">
-        <label>Rôle</label>
+        <label>{{ t.t('users.role') }}</label>
         <select [(ngModel)]="newSelectedRole" name="role" required>
-          <option value="User">Adhérent</option>
-          <option value="Admin">Administrateur</option>
+          <option value="User">{{ t.t('users.role.user') }}</option>
+          <option value="Admin">{{ t.t('users.role.admin') }}</option>
         </select>
       </div>
     </div>
     <div class="form-group">
-      <label>Mot de passe</label>
+      <label>{{ t.t('users.password') }}</label>
       <div style="position: relative;">
-        <input [type]="showCreatePassword ? 'text' : 'password'" [(ngModel)]="newUser.password" name="password" placeholder="••••••••" required style="width: 100%; padding-right: 2.5rem;">
+        <input [type]="showCreatePassword ? 'text' : 'password'" [(ngModel)]="newUser.password" name="password" [placeholder]="t.t('users.password.placeholder')" required style="width: 100%; padding-right: 2.5rem;">
         <button type="button" class="password-toggle" (click)="showCreatePassword = !showCreatePassword">
           <svg *ngIf="!showCreatePassword" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
             <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
@@ -144,32 +144,32 @@
     </div>
 
     <div class="form-actions">
-      <button type="button" class="btn-action btn-action-outline" (click)="showCreateModal = false">Annuler</button>
+      <button type="button" class="btn-action btn-action-outline" (click)="showCreateModal = false">{{ t.t('btn.cancel') }}</button>
       <button type="submit" class="btn-action btn-action-primary" [disabled]="!isCreateValid || createLoading">
         <span *ngIf="createLoading" class="spinner-sm"></span>
-        {{ createLoading ? 'Inscription…' : 'Inscrire' }}
+        {{ createLoading ? '…' : t.t('btn.submit') }}
       </button>
     </div>
   </form>
 </app-modal>
 
 <!-- Modal: Modifier un adhérent -->
-<app-modal [open]="showEditModal" title="Modifier l'adhérent" iconColor="linear-gradient(135deg, #7c4dff, #5b4cd4)" (close)="showEditModal = false">
+<app-modal [open]="showEditModal" [title]="t.t('users.edit.title')" iconColor="linear-gradient(135deg, #7c4dff, #5b4cd4)" (close)="showEditModal = false">
   <form (ngSubmit)="submitEdit()" class="modal-form">
     <div class="form-group">
-      <label>Nom complet</label>
-      <input type="text" [(ngModel)]="editUser.name" name="name" placeholder="Prénom et nom" required>
+      <label>{{ t.t('users.name') }}</label>
+      <input type="text" [(ngModel)]="editUser.name" name="name" [placeholder]="t.t('users.name.placeholder')" required>
     </div>
     <div class="form-row-2">
       <div class="form-group">
-        <label>Identifiant</label>
-        <input type="text" [(ngModel)]="editUser.username" name="username" placeholder="Nom d'utilisateur" required>
+        <label>{{ t.t('users.username') }}</label>
+        <input type="text" [(ngModel)]="editUser.username" name="username" [placeholder]="t.t('users.username.placeholder')" required>
       </div>
       <div class="form-group">
-        <label>Rôle</label>
+        <label>{{ t.t('users.role') }}</label>
         <select [(ngModel)]="editSelectedRole" name="role" required>
-          <option value="User">Adhérent</option>
-          <option value="Admin">Administrateur</option>
+          <option value="User">{{ t.t('users.role.user') }}</option>
+          <option value="Admin">{{ t.t('users.role.admin') }}</option>
         </select>
       </div>
     </div>
@@ -189,10 +189,10 @@
     </div>
 
     <div class="form-actions">
-      <button type="button" class="btn-action btn-action-outline" (click)="showEditModal = false">Annuler</button>
+      <button type="button" class="btn-action btn-action-outline" (click)="showEditModal = false">{{ t.t('btn.cancel') }}</button>
       <button type="submit" class="btn-action btn-action-warning" [disabled]="!isEditValid || editLoading">
         <span *ngIf="editLoading" class="spinner-sm"></span>
-        {{ editLoading ? 'Modification…' : 'Modifier' }}
+        {{ editLoading ? '…' : t.t('btn.save') }}
       </button>
     </div>
   </form>

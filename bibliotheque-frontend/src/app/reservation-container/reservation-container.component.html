@@ -6,8 +6,8 @@
     </svg>
   </div>
   <div>
-    <h2>Gestion des réservations</h2>
-    <p>Créer, consulter et annuler des réservations</p>
+    <h2>{{ t.t('reservations.title') }}</h2>
+    <p>{{ t.t('reservations.subtitle') }}</p>
   </div>
 </div>
 
@@ -25,30 +25,30 @@
 </app-reservation-list>
 
 <!-- Modal: Nouvelle réservation -->
-<app-modal [open]="showCreateModal" title="Nouvelle réservation" iconColor="linear-gradient(135deg, #4f6df5, #7c4dff)" (close)="showCreateModal = false">
+<app-modal [open]="showCreateModal" [title]="t.t('reservations.add.title')" iconColor="linear-gradient(135deg, #4f6df5, #7c4dff)" (close)="showCreateModal = false">
   <form (ngSubmit)="onSubmitReservation()" class="modal-form">
     <div class="form-group">
       <label>Livre</label>
       <select *ngIf="books.length > 0" [(ngModel)]="selectedBookId" name="bookId" required>
-        <option [ngValue]="null" disabled>— Sélectionner un livre —</option>
+        <option [ngValue]="null" disabled>{{ t.t('reservations.select.book') }}</option>
         <option *ngFor="let book of books" [ngValue]="book.bookId">
           {{ book.bookName }} — {{ book.bookAuthor }}
         </option>
       </select>
       <div *ngIf="books.length === 0" class="form-empty-select">
-        Aucun livre disponible
+        {{ t.t('reservations.no.books') }}
       </div>
     </div>
     <div class="form-group">
       <label>Adhérent</label>
       <select *ngIf="users.length > 0" [(ngModel)]="selectedUserId" name="userId" required>
-        <option [ngValue]="null" disabled>— Sélectionner un adhérent —</option>
+        <option [ngValue]="null" disabled>{{ t.t('reservations.select.user') }}</option>
         <option *ngFor="let user of users" [ngValue]="user.userId">
           {{ user.name }} ({{ user.username }})
         </option>
       </select>
       <div *ngIf="users.length === 0" class="form-empty-select">
-        Aucun adhérent inscrit
+        {{ t.t('reservations.no.users') }}
       </div>
     </div>
 
@@ -67,11 +67,11 @@
     </div>
 
     <div class="form-actions">
-      <button type="button" class="btn-action btn-action-outline" (click)="showCreateModal = false">Annuler</button>
+      <button type="button" class="btn-action btn-action-outline" (click)="showCreateModal = false">{{ t.t('btn.cancel') }}</button>
       <button type="submit" class="btn-action btn-action-primary"
               [disabled]="!isFormValid || formSubmitting || books.length === 0 || users.length === 0">
         <span *ngIf="formSubmitting" class="spinner-sm"></span>
-        {{ formSubmitting ? 'Création…' : 'Créer la réservation' }}
+        {{ formSubmitting ? '…' : t.t('reservations.add') }}
       </button>
     </div>
   </form>
@@ -81,9 +81,9 @@
 <app-confirm-modal
   [open]="showCancelConfirm"
   title="Annuler la réservation"
-  [message]="cancelError || cancelSuccess || 'Voulez-vous vraiment annuler cette réservation ?'"
-  [confirmLabel]="cancelError ? 'Fermer' : (cancelSuccess ? 'Fermer' : 'Annuler la réservation')"
-  cancelLabel="Rester"
+  [message]="cancelError || cancelSuccess || t.t('reservations.cancel.confirm')"
+  [confirmLabel]="cancelError ? t.t('btn.close') : (cancelSuccess ? t.t('btn.close') : t.t('reservations.cancel'))"
+  [cancelLabel]="t.t('btn.cancel')"
   [danger]="!cancelError && !cancelSuccess"
   [iconBg]="cancelError ? 'linear-gradient(135deg, #7c4dff, #5b4cd4)' : (cancelSuccess ? 'linear-gradient(135deg, #7c4dff, #5b4cd4)' : 'linear-gradient(135deg, #dc3545, #ff6b7a)')"
   (confirm)="cancelError || cancelSuccess ? cancelModalClose() : confirmCancel()"

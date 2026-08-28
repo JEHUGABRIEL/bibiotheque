@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Users } from '../_model/users';
 import { UsersService } from '../_service/users.service';
+import { TranslationService } from '../_service/translation.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
@@ -64,7 +65,8 @@ export class UsersListComponent implements OnInit {
   editSuccess: string | null = null;
 
   constructor(private usersService: UsersService,
-    private router: Router) { }
+    private router: Router,
+    public t: TranslationService) { }
 
   ngOnInit(): void {
     this.getUsers();

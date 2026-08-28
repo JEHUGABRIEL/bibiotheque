@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Books } from '../_model/books'
 import { BooksService } from '../_service/books.service';
+import { TranslationService } from '../_service/translation.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
@@ -69,7 +70,8 @@ export class BooksListComponent implements OnInit {
   }
 
   constructor(private booksService: BooksService,
-    private router: Router) { }
+    private router: Router,
+    public t: TranslationService) { }
 
   ngOnInit(): void {
     this.getBooks();

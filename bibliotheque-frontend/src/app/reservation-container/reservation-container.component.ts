@@ -6,6 +6,7 @@ import { Reservation, StatutReservation } from '../_model/reservation';
 import { ReservationService } from '../_service/reservation.service';
 import { BooksService } from '../_service/books.service';
 import { UsersService } from '../_service/users.service';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-reservation-container',
@@ -41,7 +42,8 @@ export class ReservationContainerComponent implements OnInit {
   constructor(
     private reservationService: ReservationService,
     private booksService: BooksService,
-    private usersService: UsersService
+    private usersService: UsersService,
+    public t: TranslationService
   ) { }
 
   ngOnInit() {

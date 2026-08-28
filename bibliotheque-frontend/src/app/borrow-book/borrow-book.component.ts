@@ -5,6 +5,7 @@ import { Borrow } from '../_model/borrow';
 import { BooksService } from '../_service/books.service';
 import { BorrowService } from '../_service/borrow.service';
 import { UserAuthService } from '../_service/user-auth.service';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-borrow-book',
@@ -23,6 +24,7 @@ export class BorrowBookComponent implements OnInit {
     private booksService: BooksService,
     private userAuthService: UserAuthService,
     private borrowService: BorrowService,
+    public t: TranslationService
   ) { }
 
   userId = this.userAuthService.getUserId();

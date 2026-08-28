@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Reservation, StatutReservation } from '../_model/reservation';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-reservation-list',
@@ -21,6 +22,8 @@ export class ReservationListComponent {
 
   selectedFilter: StatutReservation | null = null;
   statuts = Object.values(StatutReservation);
+
+  constructor(public t: TranslationService) {}
 
   // Pagination
   currentPage = 1;
@@ -71,11 +74,11 @@ export class ReservationListComponent {
 
   getStatutLabel(statut: StatutReservation): string {
     const labels: Record<string, string> = {
-      'EN_ATTENTE': 'En attente',
-      'DISPONIBLE': 'Disponible',
-      'ANNULEE': 'Annulée',
-      'EXPIREE': 'Expirée',
-      'HONOREE': 'Honorée'
+      'EN_ATTENTE': this.t.t('status.pending'),
+      'DISPONIBLE': this.t.t('status.available'),
+      'ANNULEE': this.t.t('status.cancelled'),
+      'EXPIREE': this.t.t('status.expired'),
+      'HONOREE': this.t.t('status.fulfilled')
     };
     return labels[statut] || statut;
   }

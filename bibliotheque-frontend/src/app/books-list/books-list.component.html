@@ -5,8 +5,8 @@
     </svg>
   </div>
   <div>
-    <h2>Catalogue des livres</h2>
-    <p>Ajouter, modifier et supprimer des livres</p>
+    <h2>{{ t.t('books.title') }}</h2>
+    <p>{{ t.t('books.subtitle') }}</p>
   </div>
 </div>
 
@@ -15,14 +15,14 @@
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
       <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
     </svg>
-    Ajouter un livre
+    {{ t.t('books.add') }}
   </button>
 </div>
 
 <!-- Loading -->
 <div *ngIf="loading" class="loading-state">
   <div class="spinner"></div>
-  <p>Chargement…</p>
+  <p>{{ t.t('table.loading') }}</p>
 </div>
 
 <!-- Table -->
@@ -30,12 +30,12 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>ID</th>
-        <th>Titre</th>
-        <th>Auteur</th>
-        <th>Genre</th>
-        <th>Exemplaires</th>
-        <th>Actions</th>
+        <th>{{ t.t('table.id') }}</th>
+        <th>{{ t.t('books.table.title') }}</th>
+        <th>{{ t.t('books.table.author') }}</th>
+        <th>{{ t.t('books.table.genre') }}</th>
+        <th>{{ t.t('books.table.copies') }}</th>
+        <th>{{ t.t('table.actions') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -81,13 +81,13 @@
 <div *ngIf="!loading && books.length > 0" class="table-footer">
   <div class="pagination">
     <button class="nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
-      ‹ Préc
+      {{ t.t('pagination.prev') }}
     </button>
     <button *ngFor="let p of pageNumbers" class="page-btn" (click)="goToPage(p)" [class.active]="p === currentPage">
       {{ p }}
     </button>
     <button class="nav-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
-      Suiv ›
+      {{ t.t('pagination.next') }}
     </button>
   </div>
 </div>
@@ -97,30 +97,30 @@
   <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
     <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492z"/>
   </svg>
-  <h3>Aucun livre</h3>
-  <p>Cliquez sur « Ajouter un livre » pour commencer.</p>
+  <h3>{{ t.t('books.empty.title') }}</h3>
+  <p>{{ t.t('books.empty.text') }}</p>
 </div>
 
 <!-- Modal: Ajouter un livre -->
-<app-modal [open]="showCreateModal" title="Ajouter un livre" iconColor="linear-gradient(135deg, #5b4cd4, #7c4dff)" (close)="showCreateModal = false">
+<app-modal [open]="showCreateModal" [title]="t.t('books.add.title')" iconColor="linear-gradient(135deg, #5b4cd4, #7c4dff)" (close)="showCreateModal = false">
   <form (ngSubmit)="submitCreate()" class="modal-form">
     <div class="form-group">
-      <label>Titre</label>
-      <input type="text" [(ngModel)]="newBook.bookName" name="bookName" placeholder="Titre du livre" required>
+      <label>{{ t.t('books.name') }}</label>
+      <input type="text" [(ngModel)]="newBook.bookName" name="bookName" [placeholder]="t.t('books.name.placeholder')" required>
     </div>
     <div class="form-row-2">
       <div class="form-group">
-        <label>Auteur</label>
-        <input type="text" [(ngModel)]="newBook.bookAuthor" name="bookAuthor" placeholder="Nom de l'auteur" required>
+        <label>{{ t.t('books.author') }}</label>
+        <input type="text" [(ngModel)]="newBook.bookAuthor" name="bookAuthor" [placeholder]="t.t('books.author.placeholder')" required>
       </div>
       <div class="form-group">
-        <label>Genre</label>
-        <input type="text" [(ngModel)]="newBook.bookGenre" name="bookGenre" placeholder="Roman, SF…">
+        <label>{{ t.t('books.genre') }}</label>
+        <input type="text" [(ngModel)]="newBook.bookGenre" name="bookGenre" [placeholder]="t.t('books.genre.placeholder')">
       </div>
     </div>
     <div class="form-group">
-      <label>Exemplaires</label>
-      <input type="number" [(ngModel)]="newBook.noOfCopies" name="noOfCopies" min="0" placeholder="0">
+      <label>{{ t.t('books.copies') }}</label>
+      <input type="number" [(ngModel)]="newBook.noOfCopies" name="noOfCopies" min="0" [placeholder]="t.t('books.copies.placeholder')">
     </div>
 
     <div *ngIf="createError" class="form-message form-error">
@@ -138,35 +138,35 @@
     </div>
 
     <div class="form-actions">
-      <button type="button" class="btn-action btn-action-outline" (click)="showCreateModal = false">Annuler</button>
+      <button type="button" class="btn-action btn-action-outline" (click)="showCreateModal = false">{{ t.t('btn.cancel') }}</button>
       <button type="submit" class="btn-action btn-action-primary" [disabled]="!isCreateValid || createLoading">
         <span *ngIf="createLoading" class="spinner-sm"></span>
-        {{ createLoading ? 'Ajout…' : 'Ajouter' }}
+        {{ createLoading ? '…' : t.t('btn.add') }}
       </button>
     </div>
   </form>
 </app-modal>
 
 <!-- Modal: Modifier un livre -->
-<app-modal [open]="showEditModal" title="Modifier le livre" iconColor="linear-gradient(135deg, #7c4dff, #5b4cd4)" (close)="showEditModal = false">
+<app-modal [open]="showEditModal" [title]="t.t('books.edit.title')" iconColor="linear-gradient(135deg, #7c4dff, #5b4cd4)" (close)="showEditModal = false">
   <form (ngSubmit)="submitEdit()" class="modal-form">
     <div class="form-group">
-      <label>Titre</label>
-      <input type="text" [(ngModel)]="editBook.bookName" name="bookName" placeholder="Titre du livre" required>
+      <label>{{ t.t('books.name') }}</label>
+      <input type="text" [(ngModel)]="editBook.bookName" name="bookName" [placeholder]="t.t('books.name.placeholder')" required>
     </div>
     <div class="form-row-2">
       <div class="form-group">
-        <label>Auteur</label>
-        <input type="text" [(ngModel)]="editBook.bookAuthor" name="bookAuthor" placeholder="Nom de l'auteur" required>
+        <label>{{ t.t('books.author') }}</label>
+        <input type="text" [(ngModel)]="editBook.bookAuthor" name="bookAuthor" [placeholder]="t.t('books.author.placeholder')" required>
       </div>
       <div class="form-group">
-        <label>Genre</label>
-        <input type="text" [(ngModel)]="editBook.bookGenre" name="bookGenre" placeholder="Roman, SF…">
+        <label>{{ t.t('books.genre') }}</label>
+        <input type="text" [(ngModel)]="editBook.bookGenre" name="bookGenre" [placeholder]="t.t('books.genre.placeholder')">
       </div>
     </div>
     <div class="form-group">
-      <label>Exemplaires</label>
-      <input type="number" [(ngModel)]="editBook.noOfCopies" name="noOfCopies" min="0" placeholder="0">
+      <label>{{ t.t('books.copies') }}</label>
+      <input type="number" [(ngModel)]="editBook.noOfCopies" name="noOfCopies" min="0" [placeholder]="t.t('books.copies.placeholder')">
     </div>
 
     <div *ngIf="editError" class="form-message form-error">
@@ -184,10 +184,10 @@
     </div>
 
     <div class="form-actions">
-      <button type="button" class="btn-action btn-action-outline" (click)="showEditModal = false">Annuler</button>
+      <button type="button" class="btn-action btn-action-outline" (click)="showEditModal = false">{{ t.t('btn.cancel') }}</button>
       <button type="submit" class="btn-action btn-action-warning" [disabled]="!isEditValid || editLoading">
         <span *ngIf="editLoading" class="spinner-sm"></span>
-        {{ editLoading ? 'Modification…' : 'Modifier' }}
+        {{ editLoading ? '…' : t.t('btn.save') }}
       </button>
     </div>
   </form>
@@ -196,11 +196,10 @@
 <!-- Modal confirmation suppression -->
 <app-confirm-modal
   [open]="showDeleteConfirm"
-  title="Supprimer le livre"
+  [title]="t.t('books.edit.title')"
   [message]="deleteMessage"
-  confirmLabel="Supprimer"
-  confirmLabel="Supprimer"
-  cancelLabel="Annuler"
+  [confirmLabel]="t.t('btn.confirm')"
+  [cancelLabel]="t.t('btn.cancel')"
   [danger]="true"
   iconBg="linear-gradient(135deg, #dc3545, #ff6b7a)"
   (confirm)="confirmDelete()"

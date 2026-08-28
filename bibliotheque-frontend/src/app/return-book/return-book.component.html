@@ -6,8 +6,8 @@
     </svg>
   </div>
   <div>
-    <h2>Retourner un livre</h2>
-    <p>Livres en cours d'emprunt</p>
+    <h2>{{ t.t('return.title') }}</h2>
+    <p>{{ t.t('return.subtitle') }}</p>
   </div>
 </div>
 
@@ -29,7 +29,7 @@
 <!-- Loading -->
 <div *ngIf="loading" class="loading-state">
   <div class="spinner"></div>
-  <p>Chargement…</p>
+  <p>{{ t.t('loading.text') }}</p>
 </div>
 
 <!-- Empty -->
@@ -38,8 +38,8 @@
     <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
     <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
   </svg>
-  <h3>Aucun emprunt en cours</h3>
-  <p>Vous n'avez aucun livre à retourner.</p>
+  <h3>{{ t.t('return.empty.title') }}</h3>
+  <p>{{ t.t('return.empty.text') }}</p>
 </div>
 
 <!-- Table -->
@@ -47,12 +47,12 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>Livre</th>
-        <th>Date d'emprunt</th>
-        <th>Date de retour</th>
-        <th>Date limite</th>
-        <th>Statut</th>
-        <th>Action</th>
+        <th>{{ t.t('return.table.book') }}</th>
+        <th>{{ t.t('return.table.issue_date') }}</th>
+        <th>{{ t.t('return.table.return_date') }}</th>
+        <th>{{ t.t('return.table.due_date') }}</th>
+        <th>{{ t.t('return.table.status') }}</th>
+        <th>{{ t.t('return.table.action') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -63,7 +63,7 @@
         <td>{{ b.dueDate }}</td>
         <td>
           <span [class]="b.returnDate === null ? 'status-badge status-en-attente' : 'status-badge status-honoree'">
-            {{ b.returnDate === null ? 'En cours' : 'Retourné' }}
+            {{ b.returnDate === null ? t.t('return.status.ongoing') : t.t('return.status.returned') }}
           </span>
         </td>
         <td>
@@ -71,7 +71,7 @@
                   (click)="returnBook(b.borrowId)" class="btn-action btn-action-warning"
                   [disabled]="returningBorrowId === b.borrowId">
             <span *ngIf="returningBorrowId === b.borrowId" class="spinner-sm"></span>
-            {{ returningBorrowId === b.borrowId ? 'Retour…' : 'Retourner' }}
+            {{ returningBorrowId === b.borrowId ? t.t('return.action.loading') : t.t('return.action') }}
           </button>
         </td>
       </tr>

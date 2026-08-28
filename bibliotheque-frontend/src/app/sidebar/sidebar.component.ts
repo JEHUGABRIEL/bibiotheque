@@ -2,6 +2,7 @@ import { Component, HostBinding, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserAuthService } from '../_service/user-auth.service';
 import { UsersService } from '../_service/users.service';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -27,7 +28,8 @@ export class SidebarComponent {
   constructor(
     public userService: UsersService,
     private userAuthService: UserAuthService,
-    private router: Router
+    private router: Router,
+    public t: TranslationService
   ) {}
 
   get isAdmin(): boolean {

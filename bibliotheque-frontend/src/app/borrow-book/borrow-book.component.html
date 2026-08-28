@@ -5,8 +5,8 @@
     </svg>
   </div>
   <div>
-    <h2>Emprunter un livre</h2>
-    <p>Livres disponibles dans la bibliothèque</p>
+    <h2>{{ t.t('borrow.title') }}</h2>
+    <p>{{ t.t('borrow.subtitle') }}</p>
   </div>
 </div>
 
@@ -28,7 +28,7 @@
 <!-- Loading -->
 <div *ngIf="loading" class="loading-state">
   <div class="spinner"></div>
-  <p>Chargement…</p>
+  <p>{{ t.t('loading.text') }}</p>
 </div>
 
 <!-- Empty state -->
@@ -36,8 +36,8 @@
   <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.3;">
     <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492z"/>
   </svg>
-  <h3>Aucun livre disponible</h3>
-  <p>Tous les livres sont actuellement empruntés ou absents.</p>
+  <h3>{{ t.t('borrow.empty.title') }}</h3>
+  <p>{{ t.t('borrow.empty.text') }}</p>
 </div>
 
 <!-- Table -->
@@ -45,11 +45,11 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>Titre</th>
-        <th>Auteur</th>
-        <th>Genre</th>
-        <th>Exemplaires</th>
-        <th>Action</th>
+        <th>{{ t.t('borrow.table.title') }}</th>
+        <th>{{ t.t('borrow.table.author') }}</th>
+        <th>{{ t.t('borrow.table.genre') }}</th>
+        <th>{{ t.t('borrow.table.copies') }}</th>
+        <th>{{ t.t('borrow.table.action') }}</th>
       </tr>
     </thead>
     <tbody>
@@ -68,7 +68,7 @@
           <button (click)="borrowBook(book.bookId)" class="btn-action btn-action-success"
                   [disabled]="book.noOfCopies < 1 || borrowingBookId === book.bookId">
             <span *ngIf="borrowingBookId === book.bookId" class="spinner-sm"></span>
-            {{ borrowingBookId === book.bookId ? 'Emprunt…' : 'Emprunter' }}
+            {{ borrowingBookId === book.bookId ? t.t('borrow.action.loading') : t.t('borrow.action') }}
           </button>
         </td>
       </tr>

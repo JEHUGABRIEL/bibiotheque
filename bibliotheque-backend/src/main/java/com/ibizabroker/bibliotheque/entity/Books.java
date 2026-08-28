@@ -16,6 +16,7 @@ public class Books {
     String bookAuthor;
     String bookGenre;
     Integer noOfCopies;
+    String imageUrl;
 
     public void borrowBook() {
         this.noOfCopies--;

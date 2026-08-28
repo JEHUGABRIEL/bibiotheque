@@ -4,4 +4,5 @@ export class Books {
     bookAuthor: string;
     bookGenre: string;
     noOfCopies: number;
+    imageUrl: string;
 }

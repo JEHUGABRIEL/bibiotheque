@@ -13,6 +13,7 @@ export class RegistrationComponent implements OnInit {
   user: Users = new Users();
   selectedRole = '';
   loading = false;
+  showPassword = false;
   errorMessage: string | null = null;
   successMessage: string | null = null;
 

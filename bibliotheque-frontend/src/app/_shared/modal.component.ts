@@ -44,8 +44,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     }
 
     .modal-container {
-      background: #21242f;
-      border: 1px solid #2d3143;
+      background: var(--bg-card, #21242f);
+      border: 1px solid var(--border-color, #2d3143);
       border-radius: 16px;
       width: 100%;
       max-height: 90vh;
@@ -64,7 +64,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       align-items: center;
       justify-content: space-between;
       padding: 1.25rem 1.5rem;
-      border-bottom: 1px solid #2d3143;
+      border-bottom: 1px solid var(--border-color, #2d3143);
     }
 
     .modal-title-area {
@@ -88,7 +88,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       font-family: 'Montserrat', sans-serif;
       font-weight: 700;
       font-size: 1.1rem;
-      color: #e8e9ed;
+      color: var(--text-primary, #e8e9ed);
       margin: 0;
     }
 
@@ -98,7 +98,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       border: none;
       border-radius: 8px;
       background: rgba(255, 255, 255, 0.05);
-      color: #8b8fa3;
+      color: var(--text-secondary, #8b8fa3);
       cursor: pointer;
       display: flex;
       align-items: center;

@@ -13,6 +13,36 @@ export class BooksListComponent implements OnInit {
 
   books: Books[] = [];
   loading = false;
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+
+  get paginatedBooks(): Books[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.books.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.books.length / this.pageSize);
+  }
+
+  get pageNumbers(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  }
+
+  get resultsInfo(): string {
+    if (this.books.length === 0) return '';
+    const start = (this.currentPage - 1) * this.pageSize + 1;
+    const end = Math.min(this.currentPage * this.pageSize, this.books.length);
+    return `${start}–${end} sur ${this.books.length}`;
+  }
+
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
   showCreateModal = false;
   showEditModal = false;
   editBook: Books = new Books();

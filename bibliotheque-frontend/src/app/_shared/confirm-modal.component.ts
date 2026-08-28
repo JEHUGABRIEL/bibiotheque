@@ -44,8 +44,8 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     }
 
     .confirm-container {
-      background: #21242f;
-      border: 1px solid #2d3143;
+      background: var(--bg-card, #21242f);
+      border: 1px solid var(--border-color, #2d3143);
       border-radius: 16px;
       width: 100%;
       max-width: 400px;
@@ -75,13 +75,13 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       font-family: 'Montserrat', sans-serif;
       font-weight: 700;
       font-size: 1.05rem;
-      color: #e8e9ed;
+      color: var(--text-primary, #e8e9ed);
       margin: 0 0 0.5rem;
     }
 
     p {
       font-size: 0.88rem;
-      color: #8b8fa3;
+      color: var(--text-secondary, #8b8fa3);
       margin: 0 0 1.5rem;
       line-height: 1.5;
     }
@@ -105,17 +105,17 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 
     .confirm-cancel {
       background: rgba(255, 255, 255, 0.05);
-      border: 1px solid #2d3143;
-      color: #8b8fa3;
+      border: 1px solid var(--border-color, #2d3143);
+      color: var(--text-secondary, #8b8fa3);
     }
 
     .confirm-cancel:hover {
       background: rgba(255, 255, 255, 0.08);
-      color: #e8e9ed;
+      color: var(--text-primary, #e8e9ed);
     }
 
     .confirm-ok {
-      background: #4f6df5;
+      background: #7c4dff;
       color: #fff;
     }
 
@@ -139,7 +139,7 @@ export class ConfirmModalComponent {
   @Input() confirmLabel = 'Confirmer';
   @Input() cancelLabel = 'Annuler';
   @Input() danger = false;
-  @Input() iconBg = 'linear-gradient(135deg, #f59e0b, #f97316)';
+  @Input() iconBg = 'linear-gradient(135deg, #7c4dff, #5b4cd4)';
   @Output() confirm = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
 

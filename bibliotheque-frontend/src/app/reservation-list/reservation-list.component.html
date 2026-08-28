@@ -1,13 +1,21 @@
-<!-- Filtre par statut -->
-<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
-  <label style="font-size: 0.78rem; font-weight: 600; color: #8b8fa3; text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Filtrer</label>
-  <div style="position: relative; display: inline-flex; align-items: center;">
-    <select style="padding: 0.5rem 2.2rem 0.5rem 0.8rem; background: #161923; border: 1px solid #2d3143; border-radius: 8px; color: #e8e9ed; font-size: 0.85rem; appearance: none; -webkit-appearance: none; background-image: url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%235c6078' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E&quot;); background-repeat: no-repeat; background-position: right 10px center; cursor: pointer;"
-            (change)="onFilterChange($any($event.target).value)">
-      <option value="">Tous les statuts</option>
-      <option *ngFor="let s of statuts" [value]="s">{{ getStatutLabel(s) }}</option>
-    </select>
+<!-- Filtre + Actions -->
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+  <div style="display: flex; align-items: center; gap: 1rem;">
+    <label style="font-size: 0.78rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Filtrer</label>
+    <div style="position: relative; display: inline-flex; align-items: center;">
+      <select class="form-control" style="width: auto;"
+              (change)="onFilterChange($any($event.target).value)">
+        <option value="">Tous les statuts</option>
+        <option *ngFor="let s of statuts" [value]="s">{{ getStatutLabel(s) }}</option>
+      </select>
+    </div>
   </div>
+  <button class="btn-action btn-action-primary" (click)="onCreate()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+    </svg>
+    Nouvelle réservation
+  </button>
 </div>
 
 <!-- État de chargement -->
@@ -57,7 +65,7 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let r of reservations">
+      <tr *ngFor="let r of paginatedReservations">
         <td><strong>{{ bookNames.get(r.bookId) || 'Livre #' + r.bookId }}</strong></td>
         <td>{{ userNames.get(r.userId) || 'Adhérent #' + r.userId }}</td>
         <td>
@@ -67,12 +75,30 @@
         <td>{{ formatDate(r.dateExpiration) }}</td>
         <td>
           <button *ngIf="canCancel(r.statut)"
-                  class="btn-action btn-action-danger"
+                  class="action-btn action-btn-danger"
+                  title="Annuler"
                   (click)="onCancel(r)">
-            Annuler
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
+            </svg>
           </button>
         </td>
       </tr>
     </tbody>
   </table>
+</div>
+
+<!-- Pagination -->
+<div *ngIf="!loading && !error && reservations.length > 0" class="table-footer">
+  <div class="pagination">
+    <button class="nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+      ‹ Préc
+    </button>
+    <button *ngFor="let p of pageNumbers" class="page-btn" (click)="goToPage(p)" [class.active]="p === currentPage">
+      {{ p }}
+    </button>
+    <button class="nav-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+      Suiv ›
+    </button>
+  </div>
 </div>

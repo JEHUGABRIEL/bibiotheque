@@ -2,8 +2,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: calc(100vh - 60px);
+  height: calc(100vh - 48px);
   padding: 2rem;
+  overflow: hidden;
 }
 
 .hero {

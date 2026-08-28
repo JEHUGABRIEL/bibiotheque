@@ -1,52 +1,115 @@
-<div class="login-wrapper">
-  <div class="login-card">
-    <div class="login-header">
-      <div class="login-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
-        </svg>
-      </div>
-      <h2>Connexion</h2>
-      <p class="login-subtitle">Accédez à votre espace bibliothèque</p>
-    </div>
-
-    <div *ngIf="errorMessage" class="error-banner">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-        <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+<div class="login-page">
+  <!-- Top bar: theme + lang toggle -->
+  <div class="login-topbar">
+    <button class="toggle-btn" (click)="themeService.toggleTheme()" [title]="t('common.dark') + ' / ' + t('common.light')">
+      <!-- Sun icon (shown in dark mode) -->
+      <svg *ngIf="themeService.theme === 'dark'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.414a.5.5 0 1 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
       </svg>
-      <span>{{ errorMessage }}</span>
+      <!-- Moon icon (shown in light mode) -->
+      <svg *ngIf="themeService.theme === 'light'" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278"/>
+      </svg>
+    </button>
+    <button class="toggle-btn lang-btn" (click)="translationService.toggleLang()">
+      <span class="lang-flag">{{ translationService.lang === 'fr' ? '🇫🇷' : '🇬🇧' }}</span>
+      <span class="lang-label">{{ translationService.lang === 'fr' ? 'EN' : 'FR' }}</span>
+    </button>
+  </div>
+
+  <div class="login-container">
+    <!-- Slider panel with fullscreen background images -->
+    <div class="slider-panel">
+      <div class="bg-slider">
+        <div *ngFor="let slide of bgSlides; let i = index"
+             class="bg-slide" [class.active]="i === currentBgSlide"
+             [style.backgroundImage]="'url(' + slide.url + ')'">
+        </div>
+        <div class="bg-overlay"></div>
+      </div>
+      <div class="slider-content">
+        <div class="slider-quotes">
+          <div class="quote-card" *ngFor="let slide of slides; let i = index"
+               [class.active]="i === currentSlide">
+            <div class="quote-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 1.18c-2.197 0-4.165 1.09-5.384 2.774C1.356 5.386 1 6.938 1 8c0 3.444 2.732 6.276 6 8.348V15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-1.652C1.545 11.742 0 9.462 0 7c0-1.225.458-2.453 1.322-3.574C2.257 2.235 3.293 1.18 5 1.18"/>
+              </svg>
+            </div>
+            <p class="quote-text">{{ t(slide.quote) }}</p>
+            <span class="quote-author">{{ t(slide.author) }}</span>
+            <div class="quote-tags">
+              <span class="quote-tag" *ngFor="let tag of slide.tags">{{ t(tag) }}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
-    <form autocomplete="off" #loginForm="ngForm" (ngSubmit)="login(loginForm)">
-      <div class="form-group">
-        <label for="loginUsername" class="form-label">Nom d'utilisateur</label>
-        <div class="input-wrapper">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
-          </svg>
-          <input type="text" name="username" ngModel class="form-control" id="loginUsername"
-                 placeholder="Saisissez votre identifiant" required>
+    <!-- Login form panel -->
+    <div class="form-panel">
+      <div class="login-card">
+        <div class="login-header">
+          <div class="login-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492zM8 1.783C7.015.936 5.587.81 4.287.94c-1.514.153-3.042.672-3.994 1.105A.5.5 0 0 0 0 2.5v11a.5.5 0 0 0 .707.352c.881-.45 2.303-.783 3.693-.783s2.813.333 3.693.783a.5.5 0 0 0 .707-.352v-11a.5.5 0 0 0-.276-.447A10 10 0 0 0 8 1.783"/>
+            </svg>
+          </div>
+          <h2>{{ t('login.title') }}</h2>
+          <p class="login-subtitle">{{ t('login.subtitle') }}</p>
         </div>
-      </div>
 
-      <div class="form-group">
-        <label for="loginPassword" class="form-label">Mot de passe</label>
-        <div class="input-wrapper">
+        <div *ngIf="errorMessage" class="error-banner">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 9h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1"/>
+            <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+            <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
           </svg>
-          <input type="password" name="password" ngModel class="form-control" id="loginPassword"
-                 placeholder="Saisissez votre mot de passe" required>
+          <span>{{ t('login.error') }}</span>
         </div>
+
+        <form autocomplete="off" #loginForm="ngForm" (ngSubmit)="login(loginForm)">
+          <div class="form-group">
+            <label for="loginUsername" class="form-label">{{ t('login.username') }}</label>
+            <div class="input-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+              </svg>
+              <input type="text" name="username" ngModel class="form-control" id="loginUsername"
+                     [placeholder]="t('login.username.placeholder')" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="loginPassword" class="form-label">{{ t('login.password') }}</label>
+            <div class="input-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 9h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1"/>
+              </svg>
+              <input [type]="showPassword ? 'text' : 'password'" name="password" ngModel class="form-control" id="loginPassword"
+                     [placeholder]="t('login.password.placeholder')" required>
+              <button type="button" class="password-toggle" (click)="showPassword = !showPassword">
+                <!-- Eye open -->
+                <svg *ngIf="!showPassword" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+                  <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+                </svg>
+                <!-- Eye closed -->
+                <svg *ngIf="showPassword" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                  <path d="M10.79 12.912l-1.604 1.604a.5.5 0 0 1-.707 0l-1.604-1.604a5.5 5.5 0 0 1-2.225-3.388l1.418.002a.5.5 0 0 1 .5.5c0 .23-.078.453-.22.634a4.49 4.49 0 0 0-.483.953 5.5 5.5 0 0 1 2.627-2.795zm-5.734-1.07l.88-.88a4.5 4.5 0 0 1 6.364 6.364l.88-.88a5.5 5.5 0 0 0-8.128-6.483zM1.636 7.305l.88.88a5.5 5.5 0 0 0 8.128 6.483l-.88.88A6.5 6.5 0 0 1 1.636 7.305zm10.658-3.583l1.418-.002a.5.5 0 0 1 .5.5c0 .23-.078.453-.22.634a4.49 4.49 0 0 0-.483.953 5.5 5.5 0 0 1-2.225 3.388l-1.604 1.604a.5.5 0 0 1-.707 0L1.854 4.793a.5.5 0 0 1 0-.707l10-10a.5.5 0 0 1 .707 0z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-login" [disabled]="loginForm.invalid || loading">
+            <span *ngIf="loading" class="spinner"></span>
+            {{ loading ? t('login.loading') : t('login.submit') }}
+          </button>
+        </form>
+
+        <p class="login-footer">{{ t('login.footer') }}</p>
       </div>
-
-      <button type="submit" class="btn-login" [disabled]="loginForm.invalid || loading">
-        <span *ngIf="loading" class="spinner"></span>
-        {{ loading ? 'Connexion…' : 'Se connecter' }}
-      </button>
-    </form>
-
-    <p class="login-footer">Identifiants fournis par l'administrateur</p>
+    </div>
   </div>
 </div>

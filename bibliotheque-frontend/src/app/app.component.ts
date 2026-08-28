@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Router, NavigationStart, NavigationEnd } from '@angular/router';
 import { UserAuthService } from './_service/user-auth.service';
+import { ThemeService } from './_service/theme.service';
+import { TranslationService } from './_service/translation.service';
 import { filter } from 'rxjs';
 
 @Component({
@@ -15,7 +17,9 @@ export class AppComponent implements OnInit {
 
   constructor(
     private userAuthService: UserAuthService,
-    private router: Router
+    private router: Router,
+    public themeService: ThemeService,
+    public translationService: TranslationService
   ) {}
 
   ngOnInit() {

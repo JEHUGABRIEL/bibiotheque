@@ -6,9 +6,12 @@
   </div>
   <div>
     <h2>Liste des adhérents</h2>
-    <p>{{ users.length }} adhérent{{ users.length > 1 ? 's' : '' }} inscrit{{ users.length > 1 ? 's' : '' }}</p>
+    <p>Inscrire, consulter et modifier des adhérents</p>
   </div>
-  <button class="btn-action btn-action-primary" style="margin-left: auto;" (click)="openCreateModal()">
+</div>
+
+<div *ngIf="!loading" style="display: flex; justify-content: flex-end; margin-bottom: 0.75rem;">
+  <button class="btn-action btn-action-primary" (click)="openCreateModal()">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
       <path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H2s-1 0-1-1 1-4 6-4 6 3 6 4"/>
       <path fill-rule="evenodd" d="M13.5 5a.5.5 0 0 1 .5.5V7h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-1 0V8h-1.5a.5.5 0 0 1 0-1H13V5.5a.5.5 0 0 1 .5-.5"/>
@@ -32,12 +35,11 @@
         <th>Nom</th>
         <th>Identifiant</th>
         <th>Rôle</th>
-        <th>Historique</th>
-        <th>Modifier</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let user of users">
+      <tr *ngFor="let user of paginatedUsers">
         <td class="text-muted-custom">{{ user.userId }}</td>
         <td><strong>{{ user.name }}</strong></td>
         <td>{{ user.username }}</td>
@@ -47,16 +49,39 @@
           </span>
         </td>
         <td>
-          <button *ngIf="user.role[0].roleName === 'User'"
-                  (click)="userDetails(user.userId)" class="btn-action btn-action-primary">Voir</button>
-          <span *ngIf="user.role[0].roleName !== 'User'" class="text-muted-custom">—</span>
-        </td>
-        <td>
-          <button (click)="openEditModal(user)" class="btn-action btn-action-outline">Modifier</button>
+          <div style="display: flex; gap: 0.4rem;">
+            <button *ngIf="user.role[0].roleName === 'User'"
+                    (click)="userDetails(user.userId)" class="action-btn action-btn-primary" title="Historique">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+                <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+              </svg>
+            </button>
+            <button (click)="openEditModal(user)" class="action-btn action-btn-warning" title="Modifier">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5v-1a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.293.458"/>
+              </svg>
+            </button>
+          </div>
         </td>
       </tr>
     </tbody>
   </table>
+</div>
+
+<!-- Pagination -->
+<div *ngIf="!loading && users.length > 0" class="table-footer">
+  <div class="pagination">
+    <button class="nav-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">
+      ‹ Préc
+    </button>
+    <button *ngFor="let p of pageNumbers" class="page-btn" (click)="goToPage(p)" [class.active]="p === currentPage">
+      {{ p }}
+    </button>
+    <button class="nav-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">
+      Suiv ›
+    </button>
+  </div>
 </div>
 
 <!-- Empty -->
@@ -90,7 +115,18 @@
     </div>
     <div class="form-group">
       <label>Mot de passe</label>
-      <input type="password" [(ngModel)]="newUser.password" name="password" placeholder="••••••••" required>
+      <div style="position: relative;">
+        <input [type]="showCreatePassword ? 'text' : 'password'" [(ngModel)]="newUser.password" name="password" placeholder="••••••••" required style="width: 100%; padding-right: 2.5rem;">
+        <button type="button" class="password-toggle" (click)="showCreatePassword = !showCreatePassword">
+          <svg *ngIf="!showCreatePassword" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
+            <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
+          </svg>
+          <svg *ngIf="showCreatePassword" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+            <path d="M10.79 12.912l-1.604 1.604a.5.5 0 0 1-.707 0l-1.604-1.604a5.5 5.5 0 0 1-2.225-3.388l1.418.002a.5.5 0 0 1 .5.5c0 .23-.078.453-.22.634a4.49 4.49 0 0 0-.483.953 5.5 5.5 0 0 1 2.627-2.795zm-5.734-1.07l.88-.88a4.5 4.5 0 0 1 6.364 6.364l.88-.88a5.5 5.5 0 0 0-8.128-6.483zM1.636 7.305l.88.88a5.5 5.5 0 0 0 8.128 6.483l-.88.88A6.5 6.5 0 0 1 1.636 7.305zm10.658-3.583l1.418-.002a.5.5 0 0 1 .5.5c0 .23-.078.453-.22.634a4.49 4.49 0 0 0-.483.953 5.5 5.5 0 0 1-2.225 3.388l-1.604 1.604a.5.5 0 0 1-.707 0L1.854 4.793a.5.5 0 0 1 0-.707l10-10a.5.5 0 0 1 .707 0z"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
     <div *ngIf="createError" class="form-message form-error">
@@ -118,7 +154,7 @@
 </app-modal>
 
 <!-- Modal: Modifier un adhérent -->
-<app-modal [open]="showEditModal" title="Modifier l'adhérent" iconColor="linear-gradient(135deg, #f59e0b, #f97316)" (close)="showEditModal = false">
+<app-modal [open]="showEditModal" title="Modifier l'adhérent" iconColor="linear-gradient(135deg, #7c4dff, #5b4cd4)" (close)="showEditModal = false">
   <form (ngSubmit)="submitEdit()" class="modal-form">
     <div class="form-group">
       <label>Nom complet</label>

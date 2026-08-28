@@ -17,9 +17,40 @@ export class ReservationListComponent {
   @Output() filterChange = new EventEmitter<StatutReservation | null>();
   @Output() cancelRequest = new EventEmitter<Reservation>();
   @Output() retryRequest = new EventEmitter<void>();
+  @Output() createRequest = new EventEmitter<void>();
 
   selectedFilter: StatutReservation | null = null;
   statuts = Object.values(StatutReservation);
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 10;
+
+  get paginatedReservations(): Reservation[] {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.reservations.slice(start, start + this.pageSize);
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.reservations.length / this.pageSize);
+  }
+
+  get pageNumbers(): number[] {
+    return Array.from({ length: this.totalPages }, (_, i) => i + 1);
+  }
+
+  get resultsInfo(): string {
+    if (this.reservations.length === 0) return '';
+    const start = (this.currentPage - 1) * this.pageSize + 1;
+    const end = Math.min(this.currentPage * this.pageSize, this.reservations.length);
+    return `${start}–${end} sur ${this.reservations.length}`;
+  }
+
+  goToPage(page: number) {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+    }
+  }
 
   onFilterChange(statut: string) {
     this.selectedFilter = statut ? statut as StatutReservation : null;
@@ -28,6 +59,10 @@ export class ReservationListComponent {
 
   onCancel(reservation: Reservation) {
     this.cancelRequest.emit(reservation);
+  }
+
+  onCreate() {
+    this.createRequest.emit();
   }
 
   onRetry() {

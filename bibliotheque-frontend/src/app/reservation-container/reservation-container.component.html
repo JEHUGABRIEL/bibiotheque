@@ -9,16 +9,11 @@
     <h2>Gestion des réservations</h2>
     <p>Créer, consulter et annuler des réservations</p>
   </div>
-  <button class="btn-action btn-action-primary" style="margin-left: auto;" (click)="openCreateModal()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-      <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
-    </svg>
-    Nouvelle réservation
-  </button>
 </div>
 
 <!-- Liste des réservations -->
 <app-reservation-list
+  (createRequest)="openCreateModal()"
   [reservations]="reservations"
   [loading]="loading"
   [error]="error"
@@ -90,7 +85,7 @@
   [confirmLabel]="cancelError ? 'Fermer' : (cancelSuccess ? 'Fermer' : 'Annuler la réservation')"
   cancelLabel="Rester"
   [danger]="!cancelError && !cancelSuccess"
-  [iconBg]="cancelError ? 'linear-gradient(135deg, #f59e0b, #f97316)' : (cancelSuccess ? 'linear-gradient(135deg, #28a745, #20c997)' : 'linear-gradient(135deg, #dc3545, #ff6b7a)')"
+  [iconBg]="cancelError ? 'linear-gradient(135deg, #7c4dff, #5b4cd4)' : (cancelSuccess ? 'linear-gradient(135deg, #7c4dff, #5b4cd4)' : 'linear-gradient(135deg, #dc3545, #ff6b7a)')"
   (confirm)="cancelError || cancelSuccess ? cancelModalClose() : confirmCancel()"
   (cancel)="cancelModalClose()">
 </app-confirm-modal>

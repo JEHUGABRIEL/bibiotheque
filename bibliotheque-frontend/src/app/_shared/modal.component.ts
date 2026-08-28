@@ -114,6 +114,19 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     .modal-body {
       padding: 1.5rem;
     }
+
+    @media (max-width: 768px) {
+      .modal-overlay {
+        padding: 0.5rem;
+        align-items: flex-start;
+        padding-top: 10vh;
+      }
+
+      .modal-container {
+        max-height: 80vh;
+        border-radius: 12px;
+      }
+    }
   `]
 })
 export class ModalComponent {

@@ -130,6 +130,20 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     .confirm-danger:hover {
       background: #c82333;
     }
+
+    @media (max-width: 768px) {
+      .modal-overlay {
+        padding: 0.5rem;
+        align-items: flex-start;
+        padding-top: 15vh;
+      }
+
+      .confirm-container {
+        max-width: 100%;
+        border-radius: 12px;
+        padding: 1.5rem;
+      }
+    }
   `]
 })
 export class ConfirmModalComponent {

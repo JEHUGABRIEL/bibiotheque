@@ -92,7 +92,6 @@
   height: calc(100vh - 48px);
   overflow-y: auto;
   background: var(--bg-primary);
-  transition: margin-left 0.2s ease;
 }
 
 /* When sidebar is present (desktop) */

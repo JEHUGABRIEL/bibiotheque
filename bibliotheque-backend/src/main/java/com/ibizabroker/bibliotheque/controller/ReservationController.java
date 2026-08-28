@@ -9,7 +9,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/reservations")
@@ -19,7 +18,7 @@ public class ReservationController {
     private ReservationService reservationService;
 
     @GetMapping
-    public ResponseEntity<?> getAll(@RequestParam(required = false) StatutReservation statut) {
+    public ResponseEntity<List<Reservation>> getAll(@RequestParam(required = false) StatutReservation statut) {
         List<Reservation> list;
         if (statut != null) {
             list = reservationService.findByStatut(statut);
@@ -30,24 +29,14 @@ public class ReservationController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody Reservation reservation) {
-        try {
-            Reservation created = reservationService.create(reservation);
-            return ResponseEntity.status(HttpStatus.CREATED).body(created);
-        } catch (ReservationService.BusinessException e) {
-            return ResponseEntity.status(e.getStatusCode())
-                    .body(Map.of("message", e.getMessage()));
-        }
+    public ResponseEntity<Reservation> create(@RequestBody Reservation reservation) {
+        Reservation created = reservationService.create(reservation);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
     @PatchMapping("/{id}/annuler")
-    public ResponseEntity<?> cancel(@PathVariable Long id) {
-        try {
-            Reservation updated = reservationService.cancel(id);
-            return ResponseEntity.ok(updated);
-        } catch (ReservationService.BusinessException e) {
-            return ResponseEntity.status(e.getStatusCode())
-                    .body(Map.of("message", e.getMessage()));
-        }
+    public ResponseEntity<Reservation> cancel(@PathVariable Long id) {
+        Reservation updated = reservationService.cancel(id);
+        return ResponseEntity.ok(updated);
     }
 }

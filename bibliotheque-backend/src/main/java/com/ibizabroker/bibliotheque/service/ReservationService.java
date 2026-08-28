@@ -6,6 +6,9 @@ import com.ibizabroker.bibliotheque.dao.UsersRepository;
 import com.ibizabroker.bibliotheque.entity.Books;
 import com.ibizabroker.bibliotheque.entity.Reservation;
 import com.ibizabroker.bibliotheque.entity.StatutReservation;
+import com.ibizabroker.bibliotheque.exceptions.BadRequestException;
+import com.ibizabroker.bibliotheque.exceptions.ConflictException;
+import com.ibizabroker.bibliotheque.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -37,26 +40,33 @@ public class ReservationService {
         Integer bookId = reservation.getBookId();
         Integer userId = reservation.getUserId();
 
+        if (bookId == null) {
+            throw new BadRequestException("L'identifiant du livre est requis");
+        }
+        if (userId == null) {
+            throw new BadRequestException("L'identifiant de l'adhérent est requis");
+        }
+
         // Vérifier que le livre existe
         Books book = booksRepository.findById(bookId)
-                .orElseThrow(() -> new BusinessException("Livre introuvable", 404));
+                .orElseThrow(() -> new NotFoundException("Livre avec l'id " + bookId + " introuvable"));
 
         // Vérifier que l'adhérent existe
         usersRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("Adhérent introuvable", 404));
+                .orElseThrow(() -> new NotFoundException("Adhérent avec l'id " + userId + " introuvable"));
 
         // Vérifier qu'aucune réservation active n'existe déjà pour ce livre
         boolean hasActive = reservationRepository.existsByBookIdAndStatutIn(
                 bookId, List.of(StatutReservation.EN_ATTENTE, StatutReservation.DISPONIBLE));
         if (hasActive) {
-            throw new BusinessException("Une réservation existe déjà pour ce livre", 409);
+            throw new ConflictException("Une réservation active existe déjà pour ce livre");
         }
 
         // Vérifier le quota de 3 réservations actives
         long activeCount = reservationRepository.countByUserIdAndStatutIn(
                 userId, List.of(StatutReservation.EN_ATTENTE, StatutReservation.DISPONIBLE));
         if (activeCount >= QUOTA_MAX) {
-            throw new BusinessException("Quota de 3 réservations atteint", 409);
+            throw new ConflictException("Quota de " + QUOTA_MAX + " réservations actives atteint pour cet adhérent");
         }
 
         // Déterminer le statut initial
@@ -78,30 +88,21 @@ public class ReservationService {
     }
 
     public Reservation cancel(Long id) {
+        if (id == null) {
+            throw new BadRequestException("L'identifiant de la réservation est requis");
+        }
+
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Réservation introuvable", 404));
+                .orElseThrow(() -> new NotFoundException("Réservation avec l'id " + id + " introuvable"));
 
         StatutReservation statut = reservation.getStatut();
         if (statut != StatutReservation.EN_ATTENTE && statut != StatutReservation.DISPONIBLE) {
-            throw new BusinessException(
-                    "Impossible d'annuler une réservation avec le statut " + statut, 409);
+            throw new ConflictException(
+                    "Impossible d'annuler une réservation avec le statut \"" + statut + "\". " +
+                    "Seules les réservations EN_ATTENTE ou DISPONIBLE peuvent être annulées.");
         }
 
         reservation.setStatut(StatutReservation.ANNULEE);
         return reservationRepository.save(reservation);
-    }
-
-    // Exception métier personnalisée
-    public static class BusinessException extends RuntimeException {
-        private final int statusCode;
-
-        public BusinessException(String message, int statusCode) {
-            super(message);
-            this.statusCode = statusCode;
-        }
-
-        public int getStatusCode() {
-            return statusCode;
-        }
     }
 }

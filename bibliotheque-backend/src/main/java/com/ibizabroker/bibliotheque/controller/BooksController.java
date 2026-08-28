@@ -2,6 +2,7 @@ package com.ibizabroker.bibliotheque.controller;
 
 import com.ibizabroker.bibliotheque.dao.BooksRepository;
 import com.ibizabroker.bibliotheque.entity.Books;
+import com.ibizabroker.bibliotheque.exceptions.BadRequestException;
 import com.ibizabroker.bibliotheque.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,45 +22,71 @@ public class BooksController {
     private BooksRepository booksRepository;
 
     @GetMapping("/books")
-    public List<Books> getAllBooks(){
+    public List<Books> getAllBooks() {
         return booksRepository.findAll();
     }
 
     @PreAuthorize("hasRole('Admin')")
     @GetMapping("/books/{id}")
-    public ResponseEntity<Books> getBookById(@PathVariable Integer id) {
-        Books book = booksRepository.findById(id).orElseThrow(() -> new NotFoundException("Book with id "+ id +" does not exist."));
+    public ResponseEntity<?> getBookById(@PathVariable Integer id) {
+        Books book = booksRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Livre avec l'id " + id + " introuvable"));
         return ResponseEntity.ok(book);
     }
 
     @PreAuthorize("hasRole('Admin')")
     @PostMapping("/books")
-    public Books createBook(@RequestBody Books book) {
-        return booksRepository.save(book);
+    public ResponseEntity<?> createBook(@RequestBody Books book) {
+        if (book.getBookName() == null || book.getBookName().trim().isEmpty()) {
+            throw new BadRequestException("Le titre du livre est obligatoire");
+        }
+        if (book.getBookAuthor() == null || book.getBookAuthor().trim().isEmpty()) {
+            throw new BadRequestException("L'auteur du livre est obligatoire");
+        }
+        if (book.getNoOfCopies() != null && book.getNoOfCopies() < 0) {
+            throw new BadRequestException("Le nombre d'exemplaires ne peut pas être négatif");
+        }
+
+        Books saved = booksRepository.save(book);
+        return ResponseEntity.ok(Map.of(
+                "message", "Livre \"" + saved.getBookName() + "\" ajouté avec succès",
+                "bookId", saved.getBookId()
+        ));
     }
 
     @PreAuthorize("hasRole('Admin')")
     @PutMapping("/books/{id}")
-    public ResponseEntity<Books> updateBook(@PathVariable Integer id, @RequestBody Books bookDetails) {
-        Books book = booksRepository.findById(id).orElseThrow(() -> new NotFoundException("Book with id "+ id +" does not exist."));
+    public ResponseEntity<?> updateBook(@PathVariable Integer id, @RequestBody Books bookDetails) {
+        Books book = booksRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Livre avec l'id " + id + " introuvable"));
 
-        book.setBookName(bookDetails.getBookName());
-        book.setBookAuthor(bookDetails.getBookAuthor());
-        book.setBookGenre(bookDetails.getBookGenre());
-        book.setNoOfCopies(bookDetails.getNoOfCopies());
+        if (bookDetails.getBookName() != null) book.setBookName(bookDetails.getBookName());
+        if (bookDetails.getBookAuthor() != null) book.setBookAuthor(bookDetails.getBookAuthor());
+        if (bookDetails.getBookGenre() != null) book.setBookGenre(bookDetails.getBookGenre());
+        if (bookDetails.getNoOfCopies() != null) {
+            if (bookDetails.getNoOfCopies() < 0) {
+                throw new BadRequestException("Le nombre d'exemplaires ne peut pas être négatif");
+            }
+            book.setNoOfCopies(bookDetails.getNoOfCopies());
+        }
 
         Books updatedBook = booksRepository.save(book);
-        return ResponseEntity.ok(updatedBook);
+        return ResponseEntity.ok(Map.of(
+                "message", "Livre mis à jour avec succès",
+                "book", updatedBook
+        ));
     }
 
     @PreAuthorize("hasRole('Admin')")
     @DeleteMapping("/books/{id}")
-    public ResponseEntity<Map<String, Boolean>> deleteBook(@PathVariable Integer id) {
-        Books book = booksRepository.findById(id).orElseThrow(() -> new NotFoundException("Book with id "+ id +" does not exist."));
+    public ResponseEntity<?> deleteBook(@PathVariable Integer id) {
+        Books book = booksRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Livre avec l'id " + id + " introuvable"));
 
         booksRepository.delete(book);
-        Map<String, Boolean> response = new HashMap<>();
-        response.put("deleted", Boolean.TRUE);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(Map.of(
+                "message", "Livre \"" + book.getBookName() + "\" supprimé avec succès",
+                "deleted", Boolean.TRUE
+        ));
     }
 }

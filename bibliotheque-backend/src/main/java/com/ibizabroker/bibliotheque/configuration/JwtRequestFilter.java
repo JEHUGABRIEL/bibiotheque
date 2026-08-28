@@ -3,6 +3,8 @@ package com.ibizabroker.bibliotheque.configuration;
 import com.ibizabroker.bibliotheque.service.JwtService;
 import com.ibizabroker.bibliotheque.util.JwtUtil;
 import io.jsonwebtoken.ExpiredJwtException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +18,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
 public class JwtRequestFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtRequestFilter.class);
 
     private final JwtUtil jwtUtil;
     private final JwtService jwtService;
@@ -38,12 +42,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             try {
                 username = jwtUtil.getUsernameFromToken(jwtToken);
             } catch (IllegalArgumentException e) {
-                System.out.println("Unable to get JWT Token");
+                log.debug("Token JWT invalide pour la requête {}", request.getRequestURI());
             } catch (ExpiredJwtException e) {
-                System.out.println("JWT Token has expired");
+                log.debug("Token JWT expiré pour la requête {}", request.getRequestURI());
             }
-        } else {
-            System.out.println("JWT token does not start with Bearer");
+        } else if (request.getHeader("Authorization") != null) {
+            log.debug("Header Authorization ne commence pas par Bearer pour {}", request.getRequestURI());
         }
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {

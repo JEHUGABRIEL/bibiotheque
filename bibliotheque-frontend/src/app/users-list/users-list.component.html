@@ -8,9 +8,23 @@
     <h2>Liste des adhérents</h2>
     <p>{{ users.length }} adhérent{{ users.length > 1 ? 's' : '' }} inscrit{{ users.length > 1 ? 's' : '' }}</p>
   </div>
+  <button class="btn-action btn-action-primary" style="margin-left: auto;" (click)="openCreateModal()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M6 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H2s-1 0-1-1 1-4 6-4 6 3 6 4"/>
+      <path fill-rule="evenodd" d="M13.5 5a.5.5 0 0 1 .5.5V7h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-1 0V8h-1.5a.5.5 0 0 1 0-1H13V5.5a.5.5 0 0 1 .5-.5"/>
+    </svg>
+    Inscrire un adhérent
+  </button>
 </div>
 
-<div class="table-responsive">
+<!-- Loading -->
+<div *ngIf="loading" class="loading-state">
+  <div class="spinner"></div>
+  <p>Chargement…</p>
+</div>
+
+<!-- Table -->
+<div *ngIf="!loading" class="table-responsive">
   <table class="data-table">
     <thead>
       <tr>
@@ -29,17 +43,121 @@
         <td>{{ user.username }}</td>
         <td>
           <span [class]="user.role[0].roleName === 'Admin' ? 'status-badge status-honoree' : 'status-badge status-disponible'">
-            {{ user.role[0].roleName }}
+            {{ user.role[0].roleName === 'Admin' ? 'Administrateur' : 'Adhérent' }}
           </span>
         </td>
         <td>
           <button *ngIf="user.role[0].roleName === 'User'"
                   (click)="userDetails(user.userId)" class="btn-action btn-action-primary">Voir</button>
+          <span *ngIf="user.role[0].roleName !== 'User'" class="text-muted-custom">—</span>
         </td>
         <td>
-          <button (click)="updateUser(user.userId)" class="btn-action btn-action-outline">Modifier</button>
+          <button (click)="openEditModal(user)" class="btn-action btn-action-outline">Modifier</button>
         </td>
       </tr>
     </tbody>
   </table>
 </div>
+
+<!-- Empty -->
+<div *ngIf="!loading && users.length === 0" class="empty-state">
+  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5"/>
+  </svg>
+  <h3>Aucun adhérent</h3>
+  <p>Cliquez sur « Inscrire un adhérent » pour commencer.</p>
+</div>
+
+<!-- Modal: Inscrire un adhérent -->
+<app-modal [open]="showCreateModal" title="Inscrire un adhérent" iconColor="linear-gradient(135deg, #6f42c1, #a855f7)" (close)="showCreateModal = false">
+  <form (ngSubmit)="submitCreate()" class="modal-form">
+    <div class="form-group">
+      <label>Nom complet</label>
+      <input type="text" [(ngModel)]="newUser.name" name="name" placeholder="Prénom et nom" required>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label>Identifiant</label>
+        <input type="text" [(ngModel)]="newUser.username" name="username" placeholder="Nom d'utilisateur" required>
+      </div>
+      <div class="form-group">
+        <label>Rôle</label>
+        <select [(ngModel)]="newSelectedRole" name="role" required>
+          <option value="User">Adhérent</option>
+          <option value="Admin">Administrateur</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Mot de passe</label>
+      <input type="password" [(ngModel)]="newUser.password" name="password" placeholder="••••••••" required>
+    </div>
+
+    <div *ngIf="createError" class="form-message form-error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+        <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+      </svg>
+      {{ createError }}
+    </div>
+    <div *ngIf="createSuccess" class="form-message form-success">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+      </svg>
+      {{ createSuccess }}
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-action btn-action-outline" (click)="showCreateModal = false">Annuler</button>
+      <button type="submit" class="btn-action btn-action-primary" [disabled]="!isCreateValid || createLoading">
+        <span *ngIf="createLoading" class="spinner-sm"></span>
+        {{ createLoading ? 'Inscription…' : 'Inscrire' }}
+      </button>
+    </div>
+  </form>
+</app-modal>
+
+<!-- Modal: Modifier un adhérent -->
+<app-modal [open]="showEditModal" title="Modifier l'adhérent" iconColor="linear-gradient(135deg, #f59e0b, #f97316)" (close)="showEditModal = false">
+  <form (ngSubmit)="submitEdit()" class="modal-form">
+    <div class="form-group">
+      <label>Nom complet</label>
+      <input type="text" [(ngModel)]="editUser.name" name="name" placeholder="Prénom et nom" required>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label>Identifiant</label>
+        <input type="text" [(ngModel)]="editUser.username" name="username" placeholder="Nom d'utilisateur" required>
+      </div>
+      <div class="form-group">
+        <label>Rôle</label>
+        <select [(ngModel)]="editSelectedRole" name="role" required>
+          <option value="User">Adhérent</option>
+          <option value="Admin">Administrateur</option>
+        </select>
+      </div>
+    </div>
+
+    <div *ngIf="editError" class="form-message form-error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+        <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+      </svg>
+      {{ editError }}
+    </div>
+    <div *ngIf="editSuccess" class="form-message form-success">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+      </svg>
+      {{ editSuccess }}
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-action btn-action-outline" (click)="showEditModal = false">Annuler</button>
+      <button type="submit" class="btn-action btn-action-warning" [disabled]="!isEditValid || editLoading">
+        <span *ngIf="editLoading" class="spinner-sm"></span>
+        {{ editLoading ? 'Modification…' : 'Modifier' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

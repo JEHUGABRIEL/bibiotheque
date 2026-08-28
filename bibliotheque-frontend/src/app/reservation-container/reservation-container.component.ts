@@ -24,9 +24,12 @@ export class ReservationContainerComponent implements OnInit {
   error: string | null = null;
   currentFilter: StatutReservation | null = null;
 
+  showCreateModal = false;
   formSubmitting = false;
   formError: string | null = null;
   formSuccess: string | null = null;
+  selectedBookId: number | null = null;
+  selectedUserId: number | null = null;
 
   constructor(
     private reservationService: ReservationService,
@@ -93,20 +96,37 @@ export class ReservationContainerComponent implements OnInit {
     this.loadReservations();
   }
 
-  onSubmitReservation(data: { bookId: number; userId: number }) {
+  openCreateModal() {
+    this.selectedBookId = null;
+    this.selectedUserId = null;
+    this.formError = null;
+    this.formSuccess = null;
+    this.showCreateModal = true;
+  }
+
+  get isFormValid(): boolean {
+    return this.selectedBookId !== null && this.selectedUserId !== null;
+  }
+
+  onSubmitReservation() {
+    if (!this.isFormValid) return;
     this.formSubmitting = true;
     this.formError = null;
     this.formSuccess = null;
 
     const reservation = new Reservation();
-    reservation.bookId = data.bookId;
-    reservation.userId = data.userId;
+    reservation.bookId = this.selectedBookId!;
+    reservation.userId = this.selectedUserId!;
 
     this.reservationService.create(reservation).subscribe({
       next: () => {
         this.formSubmitting = false;
         this.formSuccess = 'Réservation créée avec succès';
         this.loadReservations();
+        setTimeout(() => {
+          this.showCreateModal = false;
+          this.formSuccess = null;
+        }, 1200);
       },
       error: (err: HttpErrorResponse) => {
         this.formSubmitting = false;

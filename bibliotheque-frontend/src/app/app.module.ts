@@ -27,6 +27,8 @@ import { ReturnBookComponent } from './return-book/return-book.component';
 import { ReservationContainerComponent } from './reservation-container/reservation-container.component';
 import { ReservationListComponent } from './reservation-list/reservation-list.component';
 import { ReservationFormComponent } from './reservation-form/reservation-form.component';
+import { SidebarComponent } from './sidebar/sidebar.component';
+import { ModalComponent } from './_shared/modal.component';
 
 @NgModule({
   declarations: [
@@ -49,6 +51,8 @@ import { ReservationFormComponent } from './reservation-form/reservation-form.co
     ReservationContainerComponent,
     ReservationListComponent,
     ReservationFormComponent,
+    SidebarComponent,
+    ModalComponent,
   ],
   imports: [
     BrowserModule,

@@ -8,9 +8,22 @@
     <h2>Catalogue des livres</h2>
     <p>{{ books.length }} livre{{ books.length > 1 ? 's' : '' }} dans la collection</p>
   </div>
+  <button class="btn-action btn-action-primary" style="margin-left: auto;" (click)="openCreateModal()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+    </svg>
+    Ajouter un livre
+  </button>
 </div>
 
-<div class="table-responsive">
+<!-- Loading -->
+<div *ngIf="loading" class="loading-state">
+  <div class="spinner"></div>
+  <p>Chargement…</p>
+</div>
+
+<!-- Table -->
+<div *ngIf="!loading" class="table-responsive">
   <table class="data-table">
     <thead>
       <tr>
@@ -38,7 +51,7 @@
         <td>
           <div class="d-flex gap-2">
             <button (click)="bookDetails(book.bookId)" class="btn-action btn-action-primary">Voir</button>
-            <button (click)="updateBook(book.bookId)" class="btn-action btn-action-outline">Modifier</button>
+            <button (click)="openEditModal(book)" class="btn-action btn-action-outline">Modifier</button>
             <button (click)="deleteBook(book.bookId)" class="btn-action btn-action-danger">Supprimer</button>
           </div>
         </td>
@@ -46,3 +59,104 @@
     </tbody>
   </table>
 </div>
+
+<!-- Empty -->
+<div *ngIf="!loading && books.length === 0" class="empty-state">
+  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492z"/>
+  </svg>
+  <h3>Aucun livre</h3>
+  <p>Cliquez sur « Ajouter un livre » pour commencer.</p>
+</div>
+
+<!-- Modal: Ajouter un livre -->
+<app-modal [open]="showCreateModal" title="Ajouter un livre" iconColor="linear-gradient(135deg, #28a745, #20c997)" (close)="showCreateModal = false">
+  <form (ngSubmit)="submitCreate()" class="modal-form">
+    <div class="form-group">
+      <label>Titre</label>
+      <input type="text" [(ngModel)]="newBook.bookName" name="bookName" placeholder="Titre du livre" required>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label>Auteur</label>
+        <input type="text" [(ngModel)]="newBook.bookAuthor" name="bookAuthor" placeholder="Nom de l'auteur" required>
+      </div>
+      <div class="form-group">
+        <label>Genre</label>
+        <input type="text" [(ngModel)]="newBook.bookGenre" name="bookGenre" placeholder="Roman, SF…">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Exemplaires</label>
+      <input type="number" [(ngModel)]="newBook.noOfCopies" name="noOfCopies" min="0" placeholder="0">
+    </div>
+
+    <div *ngIf="createError" class="form-message form-error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+        <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+      </svg>
+      {{ createError }}
+    </div>
+    <div *ngIf="createSuccess" class="form-message form-success">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+      </svg>
+      {{ createSuccess }}
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-action btn-action-outline" (click)="showCreateModal = false">Annuler</button>
+      <button type="submit" class="btn-action btn-action-primary" [disabled]="!isCreateValid || createLoading">
+        <span *ngIf="createLoading" class="spinner-sm"></span>
+        {{ createLoading ? 'Ajout…' : 'Ajouter' }}
+      </button>
+    </div>
+  </form>
+</app-modal>
+
+<!-- Modal: Modifier un livre -->
+<app-modal [open]="showEditModal" title="Modifier le livre" iconColor="linear-gradient(135deg, #f59e0b, #f97316)" (close)="showEditModal = false">
+  <form (ngSubmit)="submitEdit()" class="modal-form">
+    <div class="form-group">
+      <label>Titre</label>
+      <input type="text" [(ngModel)]="editBook.bookName" name="bookName" placeholder="Titre du livre" required>
+    </div>
+    <div class="form-row-2">
+      <div class="form-group">
+        <label>Auteur</label>
+        <input type="text" [(ngModel)]="editBook.bookAuthor" name="bookAuthor" placeholder="Nom de l'auteur" required>
+      </div>
+      <div class="form-group">
+        <label>Genre</label>
+        <input type="text" [(ngModel)]="editBook.bookGenre" name="bookGenre" placeholder="Roman, SF…">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Exemplaires</label>
+      <input type="number" [(ngModel)]="editBook.noOfCopies" name="noOfCopies" min="0" placeholder="0">
+    </div>
+
+    <div *ngIf="editError" class="form-message form-error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+        <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+      </svg>
+      {{ editError }}
+    </div>
+    <div *ngIf="editSuccess" class="form-message form-success">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+      </svg>
+      {{ editSuccess }}
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-action btn-action-outline" (click)="showEditModal = false">Annuler</button>
+      <button type="submit" class="btn-action btn-action-warning" [disabled]="!isEditValid || editLoading">
+        <span *ngIf="editLoading" class="spinner-sm"></span>
+        {{ editLoading ? 'Modification…' : 'Modifier' }}
+      </button>
+    </div>
+  </form>
+</app-modal>

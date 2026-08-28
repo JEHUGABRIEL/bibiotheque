@@ -1,6 +1,8 @@
 package com.ibizabroker.bibliotheque.controller;
 
+import com.ibizabroker.bibliotheque.dao.RoleRepository;
 import com.ibizabroker.bibliotheque.dao.UsersRepository;
+import com.ibizabroker.bibliotheque.entity.Role;
 import com.ibizabroker.bibliotheque.entity.Users;
 import com.ibizabroker.bibliotheque.exceptions.BadRequestException;
 import com.ibizabroker.bibliotheque.exceptions.NotFoundException;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @CrossOrigin("http://localhost:4200/")
 @RestController
@@ -22,11 +25,13 @@ public class AdminController {
     private UsersRepository usersRepository;
 
     @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @PostMapping("/users")
     public ResponseEntity<?> addUserByAdmin(@RequestBody Users user) {
-        // Validation des champs obligatoires
         if (user.getName() == null || user.getName().trim().isEmpty()) {
             throw new BadRequestException("Le nom est obligatoire");
         }
@@ -40,13 +45,18 @@ public class AdminController {
             throw new BadRequestException("Le rôle est obligatoire");
         }
 
-        // Vérifier l'unicité du username
         if (usersRepository.findByUsername(user.getUsername()).isPresent()) {
             throw new BadRequestException("Le nom d'utilisateur \"" + user.getUsername() + "\" est déjà pris");
         }
 
+        // Résoudre le rôle depuis la DB au lieu de créer un nouveau
+        String roleName = user.getRole().iterator().next().getRoleName();
+        Role existingRole = roleRepository.findByRoleName(roleName)
+                .orElseThrow(() -> new BadRequestException("Rôle \"" + roleName + "\" introuvable"));
+
         String encryptPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encryptPassword);
+        user.setRole(Set.of(existingRole));
         Users saved = usersRepository.save(user);
         return ResponseEntity.ok(Map.of(
                 "message", "Utilisateur \"" + saved.getName() + "\" créé avec succès",
@@ -81,8 +91,15 @@ public class AdminController {
             throw new BadRequestException("Le nom d'utilisateur est obligatoire");
         }
 
+        // Résoudre le rôle depuis la DB
+        if (userDetails.getRole() != null && !userDetails.getRole().isEmpty()) {
+            String roleName = userDetails.getRole().iterator().next().getRoleName();
+            Role existingRole = roleRepository.findByRoleName(roleName)
+                    .orElseThrow(() -> new BadRequestException("Rôle \"" + roleName + "\" introuvable"));
+            user.setRole(Set.of(existingRole));
+        }
+
         user.setName(userDetails.getName());
-        user.setRole(userDetails.getRole());
         user.setUsername(userDetails.getUsername());
 
         Users updatedUser = usersRepository.save(user);

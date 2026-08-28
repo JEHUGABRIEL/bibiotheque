@@ -1,19 +1,18 @@
 services:
   backend:
     build: ./bibliotheque-backend
-    environment:
-      SPRING_DATASOURCE_URL: "jdbc:postgresql://host.docker.internal:5432/bibliotheque"
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-Mentalist1986}
+    env_file:
+      - ./docker/backend.env
+      - ./docker/backend.env.local
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
-      - "8080:8080"
+      - "${BACKEND_PORT:-8080}:8080"
     restart: on-failure
 
   frontend:
     build: ./bibliotheque-frontend
     ports:
-      - "4200:80"
+      - "${FRONTEND_PORT:-4200}:80"
     depends_on:
       - backend

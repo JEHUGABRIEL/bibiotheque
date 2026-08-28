@@ -1,2 +1,8 @@
 # Réglages locaux des outils
 .claude/
+
+# Variables d'environnement (données sensibles)
+.env
+*.env
+!docker/*.env
+*.env.local

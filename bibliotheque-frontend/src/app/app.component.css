@@ -242,13 +242,26 @@
     z-index: 99;
   }
 
-  /* Main content */
+  /* Hide top navbar on mobile */
   .top-navbar {
-    margin-left: 0;
+    display: none;
   }
 
+  .mobile-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .mobile-actions .navbar-btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  /* Main content */
   .app-main {
     padding: 1rem;
+    height: calc(100vh - 52px);
   }
 
   .has-sidebar .app-main {

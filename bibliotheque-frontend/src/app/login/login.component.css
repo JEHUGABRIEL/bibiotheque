@@ -413,28 +413,25 @@
    ============================================ */
 
 @media (max-width: 900px) {
+  .login-page {
+    height: auto;
+    overflow: auto;
+  }
+
   .login-container {
     flex-direction: column;
+    height: auto;
+    min-height: 100vh;
   }
 
   .slider-panel {
-    flex: none;
-    border-right: none;
-    border-bottom: 1px solid var(--border-color);
-    min-height: 60vh;
-  }
-
-  .bg-slide {
-    background-attachment: scroll;
-  }
-
-  .slider-quotes {
-    height: 180px;
+    display: none;
   }
 
   .form-panel {
     flex: 1;
-    padding: 2rem 1.5rem;
+    padding: 3rem 1.5rem;
+    min-height: 100vh;
   }
 }
 

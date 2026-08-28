@@ -17,7 +17,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret:learn_programming_yourself}")
+    @Value("${jwt.secret:SuperSecretKeyForJwtTokenGeneration2026}")
     private String SECRET_KEY;
 
     private static final int TOKEN_VALIDITY = 3600 * 5;

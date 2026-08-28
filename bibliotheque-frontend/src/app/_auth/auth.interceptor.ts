@@ -9,7 +9,7 @@ import { Injectable } from '@angular/core';
 export class AuthInterceptor implements HttpInterceptor {
   constructor(
     private userAuthService: UserAuthService,
-    private router:Router
+    private router: Router
   ) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
@@ -18,31 +18,28 @@ export class AuthInterceptor implements HttpInterceptor {
     }
 
     const token = this.userAuthService.getToken();
-
     req = this.addToken(req, token);
 
     return next.handle(req).pipe(
-        catchError(
-            (err:HttpErrorResponse) => {
-                console.log(err.status);
-                if(err.status === 401) {
-                    this.router.navigate(['/login']);
-                } else if(err.status === 403) {
-                    this.router.navigate(['/forbidden']);
-                }
-                return throwError("Some thing is wrong");
-            }
-        )
+      catchError((err: HttpErrorResponse) => {
+        // Rediriger seulement sur 401/403
+        if (err.status === 401) {
+          this.router.navigate(['/login']);
+        } else if (err.status === 403) {
+          this.router.navigate(['/forbidden']);
+        }
+        // TOUJOURS re-transmettre l'erreur originale
+        // pour que les composants puissent lire err.status + err.error.message
+        return throwError(() => err);
+      })
     );
   }
 
-  private addToken(request:HttpRequest<any>, token:string) {
-      return request.clone(
-          {
-              setHeaders: {
-                  Authorization : `Bearer ${token}`
-              }
-          }
-      );
+  private addToken(request: HttpRequest<any>, token: string) {
+    return request.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`
+      }
+    });
   }
 }

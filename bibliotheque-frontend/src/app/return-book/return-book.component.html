@@ -11,11 +11,43 @@
   </div>
 </div>
 
-<div class="table-responsive">
+<!-- Messages -->
+<div *ngIf="errorMessage" class="form-message form-error" style="max-width: 600px;">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+    <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
+  </svg>
+  {{ errorMessage }}
+</div>
+<div *ngIf="successMessage" class="form-message form-success" style="max-width: 600px;">
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+  </svg>
+  {{ successMessage }}
+</div>
+
+<!-- Loading -->
+<div *ngIf="loading" class="loading-state">
+  <div class="spinner"></div>
+  <p>Chargement…</p>
+</div>
+
+<!-- Empty -->
+<div *ngIf="!loading && borrow.length === 0" class="empty-state">
+  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+    <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+    <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+  </svg>
+  <h3>Aucun emprunt en cours</h3>
+  <p>Vous n'avez aucun livre à retourner.</p>
+</div>
+
+<!-- Table -->
+<div *ngIf="!loading && borrow.length > 0" class="table-responsive">
   <table class="data-table">
     <thead>
       <tr>
-        <th>ID Livre</th>
+        <th>Livre</th>
         <th>Date d'emprunt</th>
         <th>Date de retour</th>
         <th>Date limite</th>
@@ -25,7 +57,7 @@
     </thead>
     <tbody>
       <tr *ngFor="let b of borrow">
-        <td class="text-muted-custom">{{ b.bookId }}</td>
+        <td><strong>{{ getBookName(b.bookId) }}</strong></td>
         <td>{{ b.issueDate }}</td>
         <td>{{ b.returnDate || '—' }}</td>
         <td>{{ b.dueDate }}</td>
@@ -36,8 +68,10 @@
         </td>
         <td>
           <button *ngIf="b.returnDate === null"
-                  (click)="returnBook(b.borrowId)" class="btn-action btn-action-warning">
-            Retourner
+                  (click)="returnBook(b.borrowId)" class="btn-action btn-action-warning"
+                  [disabled]="returningBorrowId === b.borrowId">
+            <span *ngIf="returningBorrowId === b.borrowId" class="spinner-sm"></span>
+            {{ returningBorrowId === b.borrowId ? 'Retour…' : 'Retourner' }}
           </button>
         </td>
       </tr>

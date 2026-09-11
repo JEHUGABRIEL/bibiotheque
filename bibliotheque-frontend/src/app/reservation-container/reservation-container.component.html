@@ -34,9 +34,16 @@
       <label>Livre</label>
       <select *ngIf="books.length > 0" [(ngModel)]="selectedBookId" name="bookId" required>
         <option [ngValue]="null" disabled>{{ t.t('reservations.select.book') }}</option>
-        <option *ngFor="let book of books" [ngValue]="book.bookId">
-          {{ book.bookName }} — {{ book.bookAuthor }}
-        </option>
+        <optgroup *ngIf="reservableBooks.length > 0" label="{{ t.t('reservations.select.book.reservable') }}">
+          <option *ngFor="let book of reservableBooks" [ngValue]="book.bookId">
+            {{ book.bookName }} — {{ book.bookAuthor }}
+          </option>
+        </optgroup>
+        <optgroup *ngIf="nonReservableBooks.length > 0" label="{{ t.t('reservations.select.book.available') }}">
+          <option *ngFor="let book of nonReservableBooks" [ngValue]="book.bookId" disabled>
+            {{ book.bookName }} — {{ book.noOfCopies }} ex. ({{ t.t('reservations.select.book.borrow') }})
+          </option>
+        </optgroup>
       </select>
       <div *ngIf="books.length === 0" class="form-empty-select">
         {{ t.t('reservations.no.books') }}

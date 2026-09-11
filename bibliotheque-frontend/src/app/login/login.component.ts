@@ -86,14 +86,18 @@ export class LoginComponent implements OnInit, OnDestroy {
         const role = response.user.role[0].roleName;
         // Les deux modèles de rôles : Admin (hérité) et BIBLIOTHECAIRE (Séance 4) = personnel
         if (role === 'Admin' || role === 'BIBLIOTHECAIRE') {
-          this.router.navigate(['/books']);
+          this.router.navigate(['/dashboard']);
         } else {
           this.router.navigate(['/borrow-book']);
         }
       },
       (error) => {
         this.loading = false;
-        this.errorMessage = this.translationService.t('login.error');
+        // Distinguer « backend éteint » d'un vrai mauvais mot de passe :
+        // status 0 = requête réseau jamais aboutie.
+        this.errorMessage = (error?.status === 0)
+          ? this.translationService.t('login.error.server')
+          : this.translationService.t('login.error');
       }
     );
   }

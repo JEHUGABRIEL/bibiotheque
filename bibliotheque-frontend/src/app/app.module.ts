@@ -5,6 +5,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BooksListComponent } from './books-list/books-list.component';
 import { CreateBookComponent } from './create-book/create-book.component';
+import { DashboardComponent } from './dashboard/dashboard.component';
 import { FormsModule } from '@angular/forms';
 import { UpdateBookComponent } from './update-book/update-book.component';
 import { BookDetailsComponent } from './book-details/book-details.component';
@@ -37,6 +38,7 @@ import { ConfirmModalComponent } from './_shared/confirm-modal.component';
     AppComponent,
     BooksListComponent,
     CreateBookComponent,
+    DashboardComponent,
     UpdateBookComponent,
     BookDetailsComponent,
     RegistrationComponent,

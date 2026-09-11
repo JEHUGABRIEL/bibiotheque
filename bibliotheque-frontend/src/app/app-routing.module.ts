@@ -4,6 +4,7 @@ import { BookDetailsComponent } from './book-details/book-details.component';
 import { BooksListComponent } from './books-list/books-list.component';
 import { BorrowBookComponent } from './borrow-book/borrow-book.component';
 import { CreateBookComponent } from './create-book/create-book.component';
+import { DashboardComponent } from './dashboard/dashboard.component';
 import { ForbiddenComponent } from './forbidden/forbidden.component';
 import { HomeComponent } from './home/home.component';
 import { LoginComponent } from './login/login.component';
@@ -19,6 +20,7 @@ import { AuthGuard } from './_auth/auth.guard';
 
 const routes: Routes = [
   // Gestion — personnel (Admin hérité + BIBLIOTHECAIRE)
+  {path: 'dashboard', component: DashboardComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE']}},
   {path: 'books', component: BooksListComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE']}},
   {path: 'create-book', component: CreateBookComponent, canActivate:[AuthGuard], data:{roles:['Admin']}},
   {path: '', component: HomeComponent},

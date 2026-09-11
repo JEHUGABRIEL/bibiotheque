@@ -93,8 +93,11 @@ export class ReservationContainerComponent implements OnInit {
   loadBooks() {
     this.booksService.getBooksList().subscribe({
       next: (books) => {
-        // Règle RG-01 : seuls les livres indisponibles (0 copies) peuvent être réservés
-        this.books = books.filter(b => b.noOfCopies <= 0);
+        // On garde TOUS les livres : les indisponibles (0 exemplaire) sont
+        // sélectionnables, les disponibles sont désactivés (RG-01).
+        // Un filtre dur ici laissait le modal vide dès que tous les livres
+        // avaient des exemplaires — semblait un échec de chargement.
+        this.books = books;
         books.forEach(b => this.bookNames.set(b.bookId, b.bookName));
       },
       error: (err: HttpErrorResponse) => {
@@ -103,6 +106,19 @@ export class ReservationContainerComponent implements OnInit {
         }
       }
     });
+  }
+
+  /** RG-01 : seul un livre indisponible (0 exemplaire) peut être réservé. */
+  isBookReservable(book: Books): boolean {
+    return (book.noOfCopies ?? 0) <= 0;
+  }
+
+  get reservableBooks(): Books[] {
+    return this.books.filter(b => this.isBookReservable(b));
+  }
+
+  get nonReservableBooks(): Books[] {
+    return this.books.filter(b => !this.isBookReservable(b));
   }
 
   /** Liste des adhérents — endpoint Admin, réservé au personnel. */

@@ -1,16 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-
+import { HttpClientModule } from '@angular/common/http';
 import { BorrowService } from './borrow.service';
 
 describe('BorrowService', () => {
-  let service: BorrowService;
+  beforeEach(() => TestBed.configureTestingModule({ imports: [HttpClientModule] }));
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(BorrowService);
-  });
-
-  it('should be created', () => {
-    expect(service).toBeTruthy();
+  it('devrait être créé', () => {
+    expect(TestBed.inject(BorrowService)).toBeTruthy();
   });
 });

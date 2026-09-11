@@ -65,10 +65,14 @@
           </span>
         </td>
         <td>
-          <button (click)="borrowBook(book.bookId)" class="btn-action btn-action-success"
-                  [disabled]="book.noOfCopies < 1 || borrowingBookId === book.bookId">
+          <button *ngIf="book.noOfCopies > 0"
+                  (click)="borrowBook(book.bookId)" class="action-btn action-btn-success"
+                  [title]="t.t('borrow.action')"
+                  [disabled]="borrowingBookId === book.bookId">
             <span *ngIf="borrowingBookId === book.bookId" class="spinner-sm"></span>
-            {{ borrowingBookId === book.bookId ? t.t('borrow.action.loading') : t.t('borrow.action') }}
+            <svg *ngIf="borrowingBookId !== book.bookId" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+              <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z"/>
+            </svg>
           </button>
         </td>
       </tr>

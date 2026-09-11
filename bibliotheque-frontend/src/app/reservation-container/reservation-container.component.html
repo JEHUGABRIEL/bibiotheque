@@ -30,21 +30,28 @@
 <!-- Modal: Nouvelle réservation -->
 <app-modal [open]="showCreateModal" [title]="t.t('reservations.add.title')" iconColor="linear-gradient(135deg, #4f6df5, #7c4dff)" (close)="showCreateModal = false">
   <form (ngSubmit)="onSubmitReservation()" class="modal-form">
-    <div class="form-group">
+    <div class="form-group autocomplete">
       <label>Livre</label>
-      <select *ngIf="books.length > 0" [(ngModel)]="selectedBookId" name="bookId" required>
-        <option [ngValue]="null" disabled>{{ t.t('reservations.select.book') }}</option>
-        <optgroup *ngIf="reservableBooks.length > 0" label="{{ t.t('reservations.select.book.reservable') }}">
-          <option *ngFor="let book of reservableBooks" [ngValue]="book.bookId">
-            {{ book.bookName }} — {{ book.bookAuthor }}
-          </option>
-        </optgroup>
-        <optgroup *ngIf="nonReservableBooks.length > 0" label="{{ t.t('reservations.select.book.available') }}">
-          <option *ngFor="let book of nonReservableBooks" [ngValue]="book.bookId" disabled>
-            {{ book.bookName }} — {{ book.noOfCopies }} ex. ({{ t.t('reservations.select.book.borrow') }})
-          </option>
-        </optgroup>
-      </select>
+      <input type="text" class="form-control" name="bookQuery" autocomplete="off"
+             [placeholder]="t.t('reservations.select.book')"
+             [value]="bookQuery"
+             (input)="onBookQueryInput($event)"
+             (keydown)="onBookSearchKeydown($event)"
+             (blur)="onBookSearchBlur()">
+      <div class="autocomplete-list" *ngIf="showBookSuggestions && bookSuggestions.length > 0">
+        <button type="button"
+                class="autocomplete-item"
+                *ngFor="let book of bookSuggestions; let i = index"
+                [class.active]="i === highlightedIndex || i === hoveredIndex"
+                (mouseenter)="hoveredIndex = i"
+                (mouseleave)="hoveredIndex = -1"
+                (mousedown)="selectBookSuggestion(book)">
+          <span class="autocomplete-name">{{ book.bookName }}</span>
+          <span class="autocomplete-meta">{{ book.bookAuthor }}</span>
+        </button>
+      </div>
+      <div class="form-hint" *ngIf="selectedBookId !== null">✓ {{ bookQuery }}</div>
+      <div class="form-hint form-hint-muted">{{ t.t('reservations.select.book.hint') }}</div>
       <div *ngIf="books.length === 0" class="form-empty-select">
         {{ t.t('reservations.no.books') }}
       </div>
@@ -84,7 +91,7 @@
     <div class="form-actions">
       <button type="button" class="btn-action btn-action-outline" (click)="showCreateModal = false">{{ t.t('btn.cancel') }}</button>
       <button type="submit" class="btn-action btn-action-primary"
-              [disabled]="!isFormValid || formSubmitting || books.length === 0 || users.length === 0">
+              [disabled]="!isFormValid || formSubmitting || books.length === 0 || (isStaff && users.length === 0)">
         <span *ngIf="formSubmitting" class="spinner-sm"></span>
         {{ formSubmitting ? '…' : t.t('reservations.add') }}
       </button>
@@ -104,3 +111,38 @@
   (confirm)="cancelError || cancelSuccess ? cancelModalClose() : confirmCancel()"
   (cancel)="cancelModalClose()">
 </app-confirm-modal>
+
+<!-- Modal: Détails de la réservation -->
+<app-modal [open]="showDetailModal" [title]="t.t('reservations.details.title')" iconColor="linear-gradient(135deg, #4f6df5, #7c4dff)" (close)="showDetailModal = false">
+  <div *ngIf="detailReservation" class="detail-grid">
+    <div class="detail-row">
+      <span class="detail-label">{{ t.t('reservations.table.book') }}</span>
+      <span class="detail-value"><strong>{{ bookNames.get(detailReservation.bookId) || 'Livre #' + detailReservation.bookId }}</strong></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">{{ t.t('reservations.table.user') }}</span>
+      <span class="detail-value">{{ userNames.get(detailReservation.userId) || 'Adhérent #' + detailReservation.userId }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">{{ t.t('reservations.table.status') }}</span>
+      <span class="detail-value">
+        <span [class]="getStatutClass(detailReservation.statut)">{{ getStatutLabel(detailReservation.statut) }}</span>
+      </span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">{{ t.t('reservations.table.date reservation') }}</span>
+      <span class="detail-value">{{ formatDate(detailReservation.dateReservation) }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">{{ t.t('reservations.table.date expiration') }}</span>
+      <span class="detail-value">{{ formatDate(detailReservation.dateExpiration) }}</span>
+    </div>
+  </div>
+  <div class="form-actions">
+    <button type="button" class="btn-action btn-action-outline" (click)="showDetailModal = false">{{ t.t('btn.close') }}</button>
+    <button *ngIf="canCancelDetail" type="button" class="btn-action btn-action-danger"
+            (click)="showDetailModal = false; openCancelConfirm(detailReservation!)">
+      {{ t.t('reservations.cancel') }}
+    </button>
+  </div>
+</app-modal>

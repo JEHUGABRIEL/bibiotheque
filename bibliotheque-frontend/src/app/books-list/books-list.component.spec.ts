@@ -1,23 +1,23 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { RouterTestingModule } from '@angular/router/testing';
+import { HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 
 import { BooksListComponent } from './books-list.component';
 
 describe('BooksListComponent', () => {
-  let component: BooksListComponent;
   let fixture: ComponentFixture<BooksListComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [ BooksListComponent ]
-    })
-    .compileComponents();
+      imports: [RouterTestingModule, HttpClientModule, FormsModule],
+      declarations: [BooksListComponent]
+    }).compileComponents();
 
     fixture = TestBed.createComponent(BooksListComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
   });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
+  it('devrait être créé', () => {
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

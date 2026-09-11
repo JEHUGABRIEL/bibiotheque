@@ -1,16 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-
+import { HttpClientModule } from '@angular/common/http';
 import { BooksService } from './books.service';
 
 describe('BooksService', () => {
-  let service: BooksService;
+  beforeEach(() => TestBed.configureTestingModule({ imports: [HttpClientModule] }));
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(BooksService);
-  });
-
-  it('should be created', () => {
-    expect(service).toBeTruthy();
+  it('devrait être créé', () => {
+    expect(TestBed.inject(BooksService)).toBeTruthy();
   });
 });

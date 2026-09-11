@@ -844,3 +844,123 @@ body.light-theme .modal-form .form-group label {
     align-self: flex-end !important;
   }
 }
+
+/* ============================================
+   AUTOCOMPLETE — recherche prédictive
+   ============================================ */
+
+.form-group.autocomplete {
+  position: relative;
+}
+
+.autocomplete-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  z-index: 1050;
+  overflow: hidden;
+}
+
+.autocomplete-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-item.active,
+.autocomplete-item:hover {
+  background: rgba(124, 77, 255, 0.15);
+}
+
+.autocomplete-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.autocomplete-meta {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.autocomplete-hint {
+  padding: 0.6rem 0.9rem;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.form-hint {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  color: #2fbf71;
+  font-weight: 600;
+}
+
+.form-hint-muted {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+/* ============================================
+   DETAIL MODALS — grille label/valeur
+   ============================================ */
+
+.detail-grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-label {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.detail-value {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.detail-section-title {
+  margin: 1.1rem 0 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-empty {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 0.5rem 0;
+}

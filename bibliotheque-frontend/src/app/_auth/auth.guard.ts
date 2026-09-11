@@ -19,17 +19,18 @@ export class AuthGuard implements CanActivate {
     state: RouterStateSnapshot): Observable<boolean | UrlTree> | Promise<boolean | UrlTree> | boolean | UrlTree {
 
     if(this.userAuthService.getToken() !== null) {
-      const role = route.data["roles"] as Array<string>;
+      const roles = route.data["roles"] as Array<string>;
 
-      if(role) {
-        const match = this.userService.roleMatch(role);
+      // Route protégée sans contrainte de rôle : l'utilisateur authentifié passe.
+      if(!roles) {
+        return true;
+      }
 
-        if(match) {
-          return true;
-        } else {
-          this.router.navigate(['/forbidden']);
-          return false;
-        }
+      if(this.userService.roleMatch(roles)) {
+        return true;
+      } else {
+        this.router.navigate(['/forbidden']);
+        return false;
       }
     }
 

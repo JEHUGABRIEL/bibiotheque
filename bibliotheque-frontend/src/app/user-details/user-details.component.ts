@@ -25,17 +25,23 @@ export class UserDetailsComponent implements OnInit {
     public userService: UsersService
   ) { }
 
+  books: Books[] = [];
+
   ngOnInit(): void {
     this.id = this.route.snapshot.params['userId'];
-    // console.log(this.id);
     this.user = new Users();
     this.userService.getUserById(this.id).subscribe( data => {
       this.user = data;
-      console.log(data);
     })
 
+    this.bookService.getBooksList().subscribe(data => this.books = data);
     this.getBorrowedByUser(this.id);
     
+  }
+
+  getBookName(bookId: number): string {
+    const book = this.books.find(b => b.bookId === bookId);
+    return book ? book.bookName : 'Livre #' + bookId;
   }
 
   private getBorrowedByUser(userId: number) {

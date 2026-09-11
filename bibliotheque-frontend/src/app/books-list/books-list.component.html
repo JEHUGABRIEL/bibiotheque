@@ -30,7 +30,6 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>{{ t.t('table.id') }}</th>
         <th>{{ t.t('books.table.title') }}</th>
         <th>{{ t.t('books.table.author') }}</th>
         <th>{{ t.t('books.table.genre') }}</th>
@@ -40,7 +39,6 @@
     </thead>
     <tbody>
       <tr *ngFor="let book of paginatedBooks">
-        <td class="text-muted-custom">{{ book.bookId }}</td>
         <td><strong>{{ book.bookName }}</strong></td>
         <td>{{ book.bookAuthor }}</td>
         <td>
@@ -205,3 +203,32 @@
   (confirm)="confirmDelete()"
   (cancel)="cancelDelete()">
 </app-confirm-modal>
+
+<!-- Modal: Détails du livre -->
+<app-modal [open]="showDetailModal" [title]="t.t('books.details.title')" iconColor="linear-gradient(135deg, #5b4cd4, #7c4dff)" (close)="showDetailModal = false">
+  <div *ngIf="detailLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>{{ t.t('loading.text') }}</p>
+  </div>
+  <div *ngIf="!detailLoading && detailError" class="form-message form-error">{{ detailError }}</div>
+  <div *ngIf="!detailLoading && detailBook" class="detail-grid">
+    <div class="detail-row">
+      <span class="detail-label">{{ t.t('books.name') }}</span>
+      <span class="detail-value"><strong>{{ detailBook.bookName }}</strong></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">{{ t.t('books.author') }}</span>
+      <span class="detail-value">{{ detailBook.bookAuthor }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">{{ t.t('books.genre') }}</span>
+      <span class="detail-value">{{ detailBook.bookGenre || '—' }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">{{ t.t('books.copies') }}</span>
+      <span class="detail-value">
+        <span [class]="detailBook.noOfCopies > 0 ? 'status-badge status-disponible' : 'status-badge status-expiree'">{{ detailBook.noOfCopies }}</span>
+      </span>
+    </div>
+  </div>
+</app-modal>

@@ -1,7 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { Users } from '../_model/users';
+import { Borrow } from '../_model/borrow';
+import { Books } from '../_model/books';
 import { UsersService } from '../_service/users.service';
+import { BooksService } from '../_service/books.service';
+import { BorrowService } from '../_service/borrow.service';
 import { TranslationService } from '../_service/translation.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -64,12 +67,29 @@ export class UsersListComponent implements OnInit {
   editError: string | null = null;
   editSuccess: string | null = null;
 
+  // Details modal
+  showDetailModal = false;
+  detailLoading = false;
+  detailError: string | null = null;
+  detailUser: Users | null = null;
+  detailBorrows: Borrow[] = [];
+
+  /** Cache des livres pour afficher les titres dans l'historique d'emprunts. */
+  booksCache: Books[] = [];
+
   constructor(private usersService: UsersService,
-    private router: Router,
+    private booksService: BooksService,
+    private borrowService: BorrowService,
     public t: TranslationService) { }
 
   ngOnInit(): void {
     this.getUsers();
+    this.booksService.getBooksList().subscribe(books => this.booksCache = books);
+  }
+
+  getBookName(bookId: number): string {
+    const book = this.booksCache.find(b => b.bookId === bookId);
+    return book ? book.bookName : 'Livre #' + bookId;
   }
 
   private getUsers() {
@@ -85,8 +105,30 @@ export class UsersListComponent implements OnInit {
     });
   }
 
+  /** Détails en modale — identité + historique d'emprunts de l'adhérent. */
   userDetails(userId: number) {
-    this.router.navigate(['user-details', userId]);
+    this.showDetailModal = true;
+    this.detailLoading = true;
+    this.detailError = null;
+    this.detailUser = null;
+    this.detailBorrows = [];
+    this.usersService.getUserById(userId).subscribe({
+      next: (user) => {
+        this.detailUser = user;
+        this.borrowService.getBooksBorrowedByUser(userId).subscribe({
+          next: (borrows) => {
+            this.detailBorrows = borrows;
+            this.detailLoading = false;
+          },
+          error: () => { this.detailLoading = false; }
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.detailLoading = false;
+        this.detailError = err.error?.message || 'Erreur ' + err.status;
+        if (err.status === 403) { this.showDetailModal = false; }
+      }
+    });
   }
 
   /** Badge par rôle — les deux modèles de rôles sont supportés. */
@@ -102,10 +144,6 @@ export class UsersListComponent implements OnInit {
   /** Libellé traduit par rôle — quel que soit le modèle. */
   roleLabelForRole(roleName?: string): string {
     return this.t.t(this.usersService.roleLabelKey(roleName || ''));
-  }
-
-  updateUser(userId: number) {
-    this.router.navigate(['update-user', userId]);
   }
 
   // --- Create modal ---

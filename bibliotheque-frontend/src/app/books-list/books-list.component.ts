@@ -64,6 +64,12 @@ export class BooksListComponent implements OnInit {
   showDeleteConfirm = false;
   bookToDelete: Books | null = null;
 
+  // Details modal
+  showDetailModal = false;
+  detailLoading = false;
+  detailError: string | null = null;
+  detailBook: Books | null = null;
+
   get deleteMessage(): string {
     if (!this.bookToDelete) return '';
     return 'Voulez-vous vraiment supprimer \u00AB ' + this.bookToDelete.bookName + ' \u00BB ? Cette action est irréversible.';
@@ -115,8 +121,22 @@ export class BooksListComponent implements OnInit {
     this.bookToDelete = null;
   }
 
+  /** Détails en modale — plus de navigation vers une page séparée. */
   bookDetails(bookId: number) {
-    this.router.navigate(['book-details', bookId ]);
+    this.showDetailModal = true;
+    this.detailLoading = true;
+    this.detailError = null;
+    this.detailBook = null;
+    this.booksService.getBookById(bookId).subscribe({
+      next: (book) => {
+        this.detailBook = book;
+        this.detailLoading = false;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.detailLoading = false;
+        this.detailError = err.error?.message || 'Erreur ' + err.status;
+      }
+    });
   }
 
   // --- Create modal ---

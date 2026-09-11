@@ -96,7 +96,18 @@ public class AdminController {
             String roleName = userDetails.getRole().iterator().next().getRoleName();
             Role existingRole = roleRepository.findByRoleName(roleName)
                     .orElseThrow(() -> new BadRequestException("Rôle \"" + roleName + "\" introuvable"));
-            user.setRole(Set.of(existingRole));
+            // Muter la collection managée — la remplacer par un Set immuable
+            // (Set.of) fait lever UnsupportedOperationException à Hibernate
+            // au flush (500 + rollback de tout l'update).
+            user.getRole().clear();
+            user.getRole().add(existingRole);
+        }
+
+        // Unicité du username (sinon violation de contrainte → 500)
+        if (!user.getUsername().equals(userDetails.getUsername())) {
+            usersRepository.findByUsername(userDetails.getUsername()).ifPresent(u -> {
+                throw new BadRequestException("Le nom d'utilisateur \"" + userDetails.getUsername() + "\" est déjà pris");
+            });
         }
 
         user.setName(userDetails.getName());

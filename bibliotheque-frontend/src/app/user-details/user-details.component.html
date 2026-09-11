@@ -14,7 +14,7 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>ID Livre</th>
+        <th>Livre</th>
         <th>Date d'emprunt</th>
         <th>Date de retour</th>
         <th>Statut</th>
@@ -22,7 +22,7 @@
     </thead>
     <tbody>
       <tr *ngFor="let borrower of borrow">
-        <td class="text-muted-custom">{{ borrower.bookId }}</td>
+        <td><strong>{{ getBookName(borrower.bookId) }}</strong></td>
         <td>{{ borrower.issueDate }}</td>
         <td>{{ borrower.returnDate || '—' }}</td>
         <td>

@@ -11,6 +11,7 @@ import com.ibizabroker.bibliotheque.exceptions.ConflictException;
 import com.ibizabroker.bibliotheque.exceptions.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Calendar;
@@ -32,13 +33,24 @@ public class BorrowController {
     private BooksRepository booksRepository;
 
     @PostMapping
-    public ResponseEntity<?> borrowBook(@RequestBody Borrow borrow) {
-        if (borrow.getUserId() == null || borrow.getBookId() == null) {
-            throw new BadRequestException("L'identifiant de l'utilisateur et du livre sont requis");
+    public ResponseEntity<?> borrowBook(Authentication authentication, @RequestBody Borrow borrow) {
+        if (borrow.getBookId() == null) {
+            throw new BadRequestException("L'identifiant du livre est requis");
         }
 
-        Users user = usersRepository.findById(borrow.getUserId())
-                .orElseThrow(() -> new NotFoundException("Utilisateur avec l'id " + borrow.getUserId() + " introuvable"));
+        // L'identité vient du token, pas du corps de la requête. Le personnel
+        // (Admin/BIBLIOTHECAIRE) peut emprunter pour un adhérent en passant
+        // userId dans le corps ; un adhérent ne peut emprunter que pour lui.
+        Users authenticated = usersRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new NotFoundException("Utilisateur introuvable : " + authentication.getName()));
+
+        Users user = authenticated;
+        if (isStaff(authentication) && borrow.getUserId() != null
+                && !borrow.getUserId().equals(authenticated.getUserId())) {
+            user = usersRepository.findById(borrow.getUserId())
+                    .orElseThrow(() -> new NotFoundException("Utilisateur avec l'id " + borrow.getUserId() + " introuvable"));
+        }
+        borrow.setUserId(user.getUserId());
 
         Books book = booksRepository.findById(borrow.getBookId())
                 .orElseThrow(() -> new NotFoundException("Livre avec l'id " + borrow.getBookId() + " introuvable"));
@@ -70,6 +82,12 @@ public class BorrowController {
     @GetMapping
     public List<Borrow> getAllBorrow() {
         return borrowRepository.findAll();
+    }
+
+    /** Le token désigne-t-il du personnel (Admin hérité ou BIBLIOTHECAIRE) ? */
+    private boolean isStaff(Authentication authentication) {
+        return authentication.getAuthorities().stream().anyMatch(a ->
+                "ROLE_Admin".equals(a.getAuthority()) || "ROLE_BIBLIOTHECAIRE".equals(a.getAuthority()));
     }
 
     @PutMapping

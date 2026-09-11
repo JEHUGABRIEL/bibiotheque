@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Books } from '../_model/books';
 import { Users } from '../_model/users';
@@ -35,18 +34,27 @@ export class ReservationContainerComponent implements OnInit {
   selectedBookId: number | null = null;
   selectedUserId: number | null = null;
 
+  // Recherche prédictive du livre (remplace le select)
+  bookQuery = '';
+  showBookSuggestions = false;
+  highlightedIndex = -1;
+  hoveredIndex = -1;
+
   // Cancel confirmation
   showCancelConfirm = false;
   reservationToCancel: Reservation | null = null;
   cancelError: string | null = null;
   cancelSuccess: string | null = null;
 
+  // Details modal
+  showDetailModal = false;
+  detailReservation: Reservation | null = null;
+
   constructor(
     private reservationService: ReservationService,
     private booksService: BooksService,
     private usersService: UsersService,
     private userAuthService: UserAuthService,
-    private router: Router,
     public t: TranslationService
   ) { }
 
@@ -113,6 +121,69 @@ export class ReservationContainerComponent implements OnInit {
     return (book.noOfCopies ?? 0) <= 0;
   }
 
+  /**
+   * Suggestions de la recherche prédictive : livres réservables (RG-01)
+   * dont le nom contient la requête (insensible à la casse/accents).
+   */
+  get bookSuggestions(): Books[] {
+    const q = this.normalize(this.bookQuery);
+    if (!q) return [];
+    return this.books
+      .filter(b => this.isBookReservable(b) && this.normalize(b.bookName).includes(q))
+      .slice(0, 8);
+  }
+
+  /** Minuscules + sans accents, pour une recherche tolérante. */
+  private normalize(value: string): string {
+    return (value || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  onBookQueryInput(event: Event) {
+    this.bookQuery = (event.target as HTMLInputElement).value;
+    this.showBookSuggestions = true;
+    this.highlightedIndex = -1;
+    this.selectedBookId = null;
+  }
+
+  selectBookSuggestion(book: Books) {
+    this.selectedBookId = book.bookId;
+    this.bookQuery = book.bookName;
+    this.showBookSuggestions = false;
+    this.highlightedIndex = -1;
+  }
+
+  onBookSearchKeydown(event: KeyboardEvent) {
+    const suggestions = this.bookSuggestions;
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.showBookSuggestions = true;
+        this.highlightedIndex = Math.min(this.highlightedIndex + 1, suggestions.length - 1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.highlightedIndex = Math.max(this.highlightedIndex - 1, -1);
+        break;
+      case 'Enter':
+        if (this.highlightedIndex >= 0 && suggestions[this.highlightedIndex]) {
+          event.preventDefault();
+          this.selectBookSuggestion(suggestions[this.highlightedIndex]);
+        }
+        break;
+      case 'Escape':
+        this.showBookSuggestions = false;
+        break;
+    }
+  }
+
+  onBookSearchBlur() {
+    // Délai : laisser le (mousedown) des suggestions s'exécuter avant de fermer.
+    setTimeout(() => { this.showBookSuggestions = false; }, 150);
+  }
+
   get reservableBooks(): Books[] {
     return this.books.filter(b => this.isBookReservable(b));
   }
@@ -146,8 +217,53 @@ export class ReservationContainerComponent implements OnInit {
     this.loadReservations();
   }
 
+  /** Détails en modale — plus de navigation vers une page séparée. */
   openDetails(reservation: Reservation) {
-    this.router.navigate(['/reservation-details', reservation.id]);
+    this.detailReservation = reservation;
+    this.showDetailModal = true;
+  }
+
+  /** Le compte connecté peut-il annuler la réservation affichée en modale ? */
+  get canCancelDetail(): boolean {
+    const r = this.detailReservation;
+    if (!r) return false;
+    const statutOk = r.statut === StatutReservation.EN_ATTENTE || r.statut === StatutReservation.DISPONIBLE;
+    return statutOk && (this.isStaff || r.userId === this.currentUserId);
+  }
+
+  /** Libellé traduit du statut (miroir de la liste, pour la modale de détail). */
+  getStatutLabel(statut: StatutReservation): string {
+    const labels: Record<string, string> = {
+      'EN_ATTENTE': this.t.t('status.pending'),
+      'DISPONIBLE': this.t.t('status.available'),
+      'ANNULEE': this.t.t('status.cancelled'),
+      'EXPIREE': this.t.t('status.expired'),
+      'HONOREE': this.t.t('status.fulfilled')
+    };
+    return labels[statut] || statut;
+  }
+
+  getStatutClass(statut: StatutReservation): string {
+    const classes: Record<string, string> = {
+      'EN_ATTENTE': 'status-badge status-en-attente',
+      'DISPONIBLE': 'status-badge status-disponible',
+      'ANNULEE': 'status-badge status-annulee',
+      'EXPIREE': 'status-badge status-expiree',
+      'HONOREE': 'status-badge status-honoree'
+    };
+    return classes[statut] || 'status-badge status-annulee';
+  }
+
+  formatDate(date: any): string {
+    if (!date) return '-';
+    if (typeof date === 'string' && date.includes('-')) {
+      const parts = date.split('-');
+      if (parts.length === 3 && parts[0].length === 2) {
+        const [day, month, year] = parts;
+        return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString('fr-FR');
+      }
+    }
+    return new Date(date).toLocaleDateString('fr-FR');
   }
 
   onRetry() {
@@ -157,6 +273,10 @@ export class ReservationContainerComponent implements OnInit {
   openCreateModal() {
     this.selectedBookId = null;
     this.selectedUserId = null;
+    this.bookQuery = '';
+    this.showBookSuggestions = false;
+    this.highlightedIndex = -1;
+    this.hoveredIndex = -1;
     this.formError = null;
     this.formSuccess = null;
     this.showCreateModal = true;
@@ -199,8 +319,11 @@ export class ReservationContainerComponent implements OnInit {
     });
   }
 
-  /** Peut-on annuler la réservation donnée ? (propriété ou personnel) */
+  /** Peut-on annuler la réservation donnée ? (statut + propriété ou personnel) */
   canCancelReservation(reservation: Reservation): boolean {
+    const statutOk = reservation.statut === StatutReservation.EN_ATTENTE
+      || reservation.statut === StatutReservation.DISPONIBLE;
+    if (!statutOk) return false;
     if (this.isStaff) return true;
     return reservation.userId === this.userAuthService.getUserId();
   }
@@ -275,10 +398,6 @@ export class ReservationContainerComponent implements OnInit {
 
   /** Sur une erreur de CHARGEMENT 401 : proposer la reconnexion plutôt qu'un simple retry. */
   onErrorRetry(): void {
-    if (this.error && this.error.includes('reconnect')) {
-      this.router.navigate(['/login']);
-      return;
-    }
     this.onRetry();
   }
 }

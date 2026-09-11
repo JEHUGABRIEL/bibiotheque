@@ -31,7 +31,6 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>{{ t.t('table.id') }}</th>
         <th>{{ t.t('users.table.name') }}</th>
         <th>{{ t.t('users.table.username') }}</th>
         <th>{{ t.t('users.table.role') }}</th>
@@ -40,7 +39,6 @@
     </thead>
     <tbody>
       <tr *ngFor="let user of paginatedUsers">
-        <td class="text-muted-custom">{{ user.userId }}</td>
         <td><strong>{{ user.name }}</strong></td>
         <td>{{ user.username }}</td>
         <td>
@@ -197,4 +195,54 @@
       </button>
     </div>
   </form>
+</app-modal>
+
+<!-- Modal: Détails de l'adhérent (identité + historique d'emprunts) -->
+<app-modal [open]="showDetailModal" [title]="t.t('users.details.title')" iconColor="linear-gradient(135deg, #6f42c1, #a855f7)" (close)="showDetailModal = false">
+  <div *ngIf="detailLoading" class="loading-state">
+    <div class="spinner"></div>
+    <p>{{ t.t('loading.text') }}</p>
+  </div>
+  <div *ngIf="!detailLoading && detailError" class="form-message form-error">{{ detailError }}</div>
+  <div *ngIf="!detailLoading && detailUser">
+    <div class="detail-grid">
+      <div class="detail-row">
+        <span class="detail-label">{{ t.t('users.name') }}</span>
+        <span class="detail-value"><strong>{{ detailUser.name }}</strong></span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">{{ t.t('users.username') }}</span>
+        <span class="detail-value">{{ detailUser.username }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">{{ t.t('users.role') }}</span>
+        <span class="detail-value">
+          <span [class]="badgeClassForRole(detailUser.role?.[0]?.roleName)">{{ roleLabelForRole(detailUser.role?.[0]?.roleName) }}</span>
+        </span>
+      </div>
+    </div>
+
+    <h4 class="detail-section-title">{{ t.t('users.details.borrows') }}</h4>
+    <table class="data-table" *ngIf="detailBorrows.length > 0">
+      <thead>
+        <tr>
+          <th>{{ t.t('return.table.book') }}</th>
+          <th>{{ t.t('return.table.due_date') }}</th>
+          <th>{{ t.t('return.table.status') }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let b of detailBorrows">
+          <td>{{ getBookName(b.bookId) }}</td>
+          <td>{{ b.dueDate || '—' }}</td>
+          <td>
+            <span [class]="b.returnDate !== null ? 'status-badge status-honoree' : 'status-badge status-en-attente'">
+              {{ b.returnDate !== null ? t.t('return.status.returned') : t.t('return.status.ongoing') }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="detailBorrows.length === 0" class="detail-empty">{{ t.t('users.details.no.borrows') }}</div>
+  </div>
 </app-modal>

@@ -21,6 +21,13 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(JwtRequestFilter.class);
 
+    /**
+     * Attribut de requête posé quand le token fourni est expiré.
+     * Le JwtAuthenticationEntryPoint s'en sert pour renvoyer un message dédié
+     * ("Session expirée") au lieu du 401 générique.
+     */
+    public static final String JWT_EXPIRED_ATTRIBUTE = "jwtExpired";
+
     private final JwtUtil jwtUtil;
     private final JwtService jwtService;
 
@@ -45,6 +52,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                 log.debug("Token JWT invalide pour la requête {}", request.getRequestURI());
             } catch (ExpiredJwtException e) {
                 log.debug("Token JWT expiré pour la requête {}", request.getRequestURI());
+                // Bonus : signalez l'expiration pour que le 401 porte le bon message
+                request.setAttribute(JWT_EXPIRED_ATTRIBUTE, Boolean.TRUE);
             }
         } else if (request.getHeader("Authorization") != null) {
             log.debug("Header Authorization ne commence pas par Bearer pour {}", request.getRequestURI());

@@ -7,6 +7,11 @@ import com.ibizabroker.bibliotheque.entity.Role;
 import com.ibizabroker.bibliotheque.entity.StatutReservation;
 import com.ibizabroker.bibliotheque.entity.Users;
 import com.ibizabroker.bibliotheque.util.JwtUtil;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,6 +94,18 @@ class ReservationSecurityIntegrationTest {
         return jwtUtil.generateToken(details);
     }
 
+    /** Génère un JWT valablement signé MAIS expiré depuis une heure. */
+    private String tokenExpire() {
+        SecretKey key = Keys.hmacShaKeyFor("SuperSecretKeyForJwtTokenGeneration2026".getBytes(StandardCharsets.UTF_8));
+        long ilYAUneHeure = System.currentTimeMillis() - 3_600_000L;
+        return Jwts.builder()
+                .subject("alice")
+                .issuedAt(new Date(ilYAUneHeure * 2))
+                .expiration(new Date(ilYAUneHeure))
+                .signWith(key)
+                .compact();
+    }
+
     // ------------------------------------------------------------------
     // RS-01 — Sans token : 401 partout
     // ------------------------------------------------------------------
@@ -159,5 +176,18 @@ class ReservationSecurityIntegrationTest {
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                         .delete(ENDPOINT + "/5").header("Authorization", "Bearer " + tokenPour("alice")))
                 .andExpect(status().isForbidden());
+    }
+
+    // ------------------------------------------------------------------
+    // Bonus — expiration du token : 401 avec un message dédié
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Bonus : un token expiré renvoie 401 avec le message « Session expirée »")
+    void getById_tokenExpire_renvoie401AvecMessageSessionExpiree() throws Exception {
+        mockMvc.perform(get(ENDPOINT + "/1").header("Authorization", "Bearer " + tokenExpire()))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Session expirée, veuillez vous reconnecter"))
+                .andExpect(jsonPath("$.expired").value(true));
     }
 }

@@ -12,6 +12,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -27,6 +29,9 @@ import org.springframework.web.cors.CorsConfigurationSource;
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 public class WebSecurityConfiguration {
+
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(WebSecurityConfiguration.class);
 
     @Autowired
     private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
@@ -77,9 +82,15 @@ public class WebSecurityConfiguration {
      * 403 au format JSON pour un utilisateur authentifié mais non autorisé.
      * Sans lui, Spring renverrait un 403 HTML ; et via @RestControllerAdvice, le
      * handler générique transformerait l'AccessDeniedException en 500.
+     * Bonus : chaque refus est journalisé (qui, où, pourquoi).
      */
     private AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String qui = (auth != null) ? auth.getName() : "inconnu";
+            log.warn("Accès refusé [403] {} {} — utilisateur '{}' : droits insuffisants",
+                    request.getMethod(), request.getRequestURI(), qui);
+
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json;charset=UTF-8");
             response.getWriter().write(new ObjectMapper().writeValueAsString(

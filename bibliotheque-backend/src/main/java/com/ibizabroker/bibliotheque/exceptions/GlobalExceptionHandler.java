@@ -4,6 +4,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -19,6 +22,12 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    /** Qui est à l'origine de la requête refusée (pour la journalisation). */
+    private String utilisateurCourant() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return (auth != null && auth.isAuthenticated()) ? auth.getName() : "anonyme";
+    }
 
     /**
      * 400 — Données invalides (champs manquants, format incorrect)
@@ -63,8 +72,9 @@ public class GlobalExceptionHandler {
      * 403 — Un adhérent tente d'accéder à la réservation d'un autre (RS-03)
      */
     @ExceptionHandler(ForbiddenException.class)
-    public ResponseEntity<Map<String, String>> handleForbidden(ForbiddenException e) {
-        log.warn("Accès refusé : {}", e.getMessage());
+    public ResponseEntity<Map<String, String>> handleForbidden(ForbiddenException e, HttpServletRequest request) {
+        log.warn("Accès refusé [403] {} {} — utilisateur '{}' : {}",
+                request.getMethod(), request.getRequestURI(), utilisateurCourant(), e.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(Map.of("message", e.getMessage()));
     }
@@ -102,8 +112,9 @@ public class GlobalExceptionHandler {
      * À déclarer AVANT le handler générique Exception, sinon Spring la transformerait en 500.
      */
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException e) {
-        log.warn("Accès refusé : {}", e.getMessage());
+    public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException e, HttpServletRequest request) {
+        log.warn("Accès refusé [403] {} {} — utilisateur '{}' : droits insuffisants",
+                request.getMethod(), request.getRequestURI(), utilisateurCourant());
         return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(Map.of("message", "Accès refusé : vous n'avez pas les droits nécessaires"));
     }

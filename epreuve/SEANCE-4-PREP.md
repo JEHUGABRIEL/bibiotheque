@@ -65,7 +65,7 @@ Phrase clé : « L'identité vient du token, jamais du corps de la requête. »
 ```bash
 ./mvnw test
 ```
-→ 10/10 verts. Insister : les tests tournent **sans base de données** (Postgres arrêté — le montrer si demandé : `docker ps`).
+→ 11/11 verts. Insister : les tests tournent **sans base de données** (Postgres arrêté — le montrer si demandé : `docker ps`).
 - Unitaires (`ReservationServiceQuotaTest`) : Mockito pur, repository simulé, quota 3 (2 actifs → OK, 3 actifs → refus).
 - Intégration (`ReservationSecurityIntegrationTest`) : vrai contexte Spring + **vrais tokens signés** passant par le vrai filtre JWT → 401 / 200 / 403.
 
@@ -78,20 +78,21 @@ Un seul slide mental : contrôleur = `@PreAuthorize` par rôle, service = identi
 ## 4. Questions pièges probables & réponses
 
 - **« Pourquoi 403 et pas 404 sur la réservation d'un autre ? »** — Choix assumé : 403 exprime la règle métier (exists mais pas à toi). Alternative défendable : 404 pour ne pas révéler l'existence (énumération). Cite les deux, dis pourquoi tu as choisi 403 (lisibilité du barème RS-03).
-- **« Et si le token est expiré ? »** — `JwtRequestFilter` attrape `ExpiredJwtException` → pas d'authentification → 401 (jamais 403).
+- **« Et si le token est expiré ? »** — Géré (bonus) : `JwtRequestFilter` attrape `ExpiredJwtException` → 401 avec le message dédié « Session expirée, veuillez vous reconnecter » + `expired:true`. Test d'intégration dédié (vrai JWT signé mais expiré).
 - **« Pourquoi un handler 403 dédié ? »** — Sans lui : `@RestControllerAdvice` générique transformait l'`AccessDeniedException` en **500**. Le `AccessDeniedHandler` JSON le corrige et distingue bien 401/403.
 - **« BIBLIOTHECAIRE peut réserver pour qui ? »** — Oui, n'importe qui (tableau de l'énoncé) : `createFor` n'écrase pas le `userId` pour ce rôle.
 - **« Les tests touchent la vraie base ? »** — Non. Unitaires = Mockito pur. Intégration = repos mockés + H2 en mémoire (scope test) pour le bootstrap JPA. Postgres peut être éteint.
 
-## 5. Si tu finis en avance
+## 5. Si tu finis en avance — les 3 bonus sont FAITS
 
-- RG-01 : réserver « 1984 » (3 exemplaires) → 409 « livre disponible » :
+1. **Expiration du token (fait)** — montrer en live :
 ```bash
-curl -i -X POST http://localhost:8080/api/reservations -H "Authorization: Bearer $TB" \
-  -H "Content-Type: application/json" -d '{"bookId":2,"userId":10}'
+# n'importe quel token expiré (ou attendre 5h, TOKEN_VALIDITY dans JwtUtil)
+curl -i http://localhost:8080/api/reservations -H "Authorization: Bearer <token_expiré>"
+# → 401 {"message":"Session expirée, veuillez vous reconnecter","expired":true}
 ```
-- Expiration : `TOKEN_VALIDITY` dans `JwtUtil` = 5 h ; un token expiré → 401 + filtre log « Token JWT expiré ».
-- Journalisation des refus : déjà en place (`log.warn` dans `GlobalExceptionHandler` et l'`AccessDeniedHandler`).
+2. **Journalisation des refus (fait)** — lancer un appel refusé puis `grep "Accès refusé"` dans la console du backend : chaque refus loggue **[401]/[403], la méthode, l'URI, l'utilisateur et la raison** (entry point, AccessDeniedHandler, ForbiddenException).
+3. **RG-01 (démontré en live)** — réserver « 1984 » (3 exemplaires) → 409 « livre disponible » ; couvert en plus par la démo du tableau §3.
 
 ## 6. Avant de partir — checklist
 
@@ -113,8 +114,12 @@ Fermeture de `/api/reservations` : authentification obligatoire, rôles ADHERENT
 - **RS-04** — `ReservationService.createFor` : `userId` du corps écrasé par l'identité du token
 - **RS-05** — `ReservationService.findAllFor` + `ReservationRepository.findByUserId` : liste filtrée par adhérent
 
-**Tests (10/10 verts, sans base de données) :**
+**Bonus :**
+- **Expiration du token** — `JwtRequestFilter` + `JwtAuthenticationEntryPoint` : 401 « Session expirée, veuillez vous reconnecter » (+ `expired:true`)
+- **Journalisation des accès refusés** — chaque 401/403 est loggué avec qui, où et pourquoi (entry point, `AccessDeniedHandler`, `GlobalExceptionHandler`)
+
+**Tests (11/11 verts, sans base de données) :**
 - `ReservationServiceQuotaTest` — RG-03, repository mocké (Mockito), quota 3 actifs
-- `ReservationSecurityIntegrationTest` — vrais tokens signés + vrai filtre JWT : 401 / 200 filtré / 403 propriétaire / 403 DELETE
+- `ReservationSecurityIntegrationTest` — vrais tokens signés + vrai filtre JWT : 401 / 200 filtré / 403 propriétaire / 403 DELETE / token expiré → message dédié
 
 *(coller ici la capture du résultat `./mvnw test`)*

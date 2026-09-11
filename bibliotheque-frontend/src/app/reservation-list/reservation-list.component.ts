@@ -14,6 +14,10 @@ export class ReservationListComponent {
   @Input() error: string | null = null;
   @Input() bookNames: Map<number, string> = new Map();
   @Input() userNames: Map<number, string> = new Map();
+  /** Identité du compte connecté — pour ne montrer « Annuler » que sur SES réservations. */
+  @Input() currentUserId: number | null = null;
+  /** Le personnel peut annuler n'importe quelle réservation. */
+  @Input() isStaff = false;
 
   @Output() filterChange = new EventEmitter<StatutReservation | null>();
   @Output() cancelRequest = new EventEmitter<Reservation>();
@@ -94,8 +98,10 @@ export class ReservationListComponent {
     return classes[statut] || 'badge bg-secondary';
   }
 
-  canCancel(statut: StatutReservation): boolean {
-    return statut === StatutReservation.EN_ATTENTE || statut === StatutReservation.DISPONIBLE;
+  canCancel(r: Reservation): boolean {
+    const statutOk = r.statut === StatutReservation.EN_ATTENTE || r.statut === StatutReservation.DISPONIBLE;
+    // Droit : personnel, ou réservation qui m'appartient (miroir UI de la règle RS-03 backend)
+    return statutOk && (this.isStaff || r.userId === this.currentUserId);
   }
 
   formatDate(date: any): string {

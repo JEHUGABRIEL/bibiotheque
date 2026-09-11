@@ -107,6 +107,9 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Reservations
     'reservations.title': 'Gestion des réservations',
     'reservations.subtitle': 'Créer, consulter et annuler des réservations',
+    'reservations.subtitle.self': 'Consulter vos réservations et les annuler',
+    'reservations.select.user.self': 'La réservation sera à votre nom',
+    'login.sessionExpired': 'Votre session a expiré. Veuillez vous reconnecter.',
     'reservations.add': 'Nouvelle réservation',
     'reservations.add.title': 'Nouvelle réservation',
     'reservations.table.book': 'Livre',
@@ -262,6 +265,9 @@ const TRANSLATIONS: Record<Lang, Record<string, string>> = {
     // Reservations
     'reservations.title': 'Reservation management',
     'reservations.subtitle': 'Create, view and cancel reservations',
+    'reservations.subtitle.self': 'View your reservations and cancel them',
+    'reservations.select.user.self': 'The reservation will be in your name',
+    'login.sessionExpired': 'Your session has expired. Please log in again.',
     'reservations.add': 'New reservation',
     'reservations.add.title': 'New reservation',
     'reservations.table.book': 'Book',

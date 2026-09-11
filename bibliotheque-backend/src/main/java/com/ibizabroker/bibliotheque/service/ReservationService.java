@@ -21,6 +21,7 @@ public class ReservationService {
 
     private static final int QUOTA_MAX = 3;
     private static final String ROLE_BIBLIOTHECAIRE = "BIBLIOTHECAIRE";
+    private static final String ROLE_ADMIN = "Admin";
 
     @Autowired
     private ReservationRepository reservationRepository;
@@ -42,8 +43,10 @@ public class ReservationService {
     }
 
     private boolean isBibliothecaire(Users user) {
+        // L'ancien rôle 'Admin' (séances précédentes) donne aussi les droits staff
         return user.getRole().stream()
-                .anyMatch(r -> ROLE_BIBLIOTHECAIRE.equals(r.getRoleName()));
+                .anyMatch(r -> ROLE_BIBLIOTHECAIRE.equals(r.getRoleName())
+                        || ROLE_ADMIN.equals(r.getRoleName()));
     }
 
     // ------------------------------------------------------------------

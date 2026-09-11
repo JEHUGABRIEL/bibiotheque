@@ -27,23 +27,15 @@ export class UsersService {
   }
 
   public roleMatch(allowedRoles: any): boolean {
-    let isMatch = false;
     const userRoles: any = this.userAuthService.getRoles();
-
-    if (userRoles != null && userRoles) {
-      for (let i = 0; i < userRoles.length; i++) {
-        for (let j = 0; j < allowedRoles.length; j++) {
-          if (userRoles[i].roleName === allowedRoles[j]) {
-            isMatch = true;
-            return isMatch;
-          } else {
-            return isMatch;
-          }
-        }
-      }
+    if (!userRoles || !Array.isArray(userRoles)) {
+      return false;
     }
-
-    return false;
+    // Comparer TOUTES les paires avant de conclure — un early-return
+    // ici faisait échouer tout rôle qui n'est pas le premier de la liste.
+    return userRoles.some((r: any) =>
+      allowedRoles.some((allowed: any) => r?.roleName === allowed)
+    );
   }
 
   getUsersList(): Observable<Users[]> {

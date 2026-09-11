@@ -7,7 +7,7 @@
   </div>
   <div>
     <h2>{{ t.t('reservations.title') }}</h2>
-    <p>{{ t.t('reservations.subtitle') }}</p>
+    <p>{{ isStaff ? t.t('reservations.subtitle') : t.t('reservations.subtitle.self') }}</p>
   </div>
 </div>
 
@@ -19,9 +19,11 @@
   [error]="error"
   [bookNames]="bookNames"
   [userNames]="userNames"
+  [currentUserId]="currentUserId"
+  [isStaff]="isStaff"
   (filterChange)="onFilterChange($event)"
   (cancelRequest)="openCancelConfirm($event)"
-  (retryRequest)="onRetry()">
+  (retryRequest)="onErrorRetry()">
 </app-reservation-list>
 
 <!-- Modal: Nouvelle réservation -->
@@ -41,13 +43,18 @@
     </div>
     <div class="form-group">
       <label>Adhérent</label>
-      <select *ngIf="users.length > 0" [(ngModel)]="selectedUserId" name="userId" required>
+      <!-- Le personnel choisit l'adhérent ; un ADHERENT n'a pas le choix :
+           le backend force l'identité du token (RS-04). -->
+      <select *ngIf="isStaff && users.length > 0" [(ngModel)]="selectedUserId" name="userId" required>
         <option [ngValue]="null" disabled>{{ t.t('reservations.select.user') }}</option>
         <option *ngFor="let user of users" [ngValue]="user.userId">
           {{ user.name }} ({{ user.username }})
         </option>
       </select>
-      <div *ngIf="users.length === 0" class="form-empty-select">
+      <div *ngIf="!isStaff" class="form-empty-select">
+        {{ t.t('reservations.select.user.self') }}
+      </div>
+      <div *ngIf="isStaff && users.length === 0" class="form-empty-select">
         {{ t.t('reservations.no.users') }}
       </div>
     </div>

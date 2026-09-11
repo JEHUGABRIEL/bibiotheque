@@ -35,7 +35,7 @@ export class SidebarComponent {
   ) {}
 
   get isAdmin(): boolean {
-    return this.userService.roleMatch(['Admin']);
+    return this.userService.roleMatch(['Admin', 'BIBLIOTHECAIRE']);
   }
 
   get isUser(): boolean {

@@ -71,7 +71,7 @@
         <td>{{ formatDate(r.dateReservation) }}</td>
         <td>{{ formatDate(r.dateExpiration) }}</td>
         <td>
-          <button *ngIf="canCancel(r.statut)"
+          <button *ngIf="canCancel(r)"
                   class="action-btn action-btn-danger"
                   title="Annuler"
                   (click)="onCancel(r)">

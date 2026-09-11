@@ -5,6 +5,14 @@ import { Observable, throwError } from 'rxjs';
 import { UserAuthService } from '../_service/user-auth.service';
 import { Injectable } from '@angular/core';
 
+/**
+ * Endpoints pour lesquels une erreur HTTP doit rester LOCALE au composant
+ * (message inline, retry…), sans redirection globale.
+ */
+const SKIP_GLOBAL_REDIRECT_URLS = [
+  '/api/reservations'
+];
+
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
   constructor(
@@ -22,10 +30,26 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return next.handle(req).pipe(
       catchError((err: HttpErrorResponse) => {
-        // Rediriger seulement sur 401/403
+        const localHandling = SKIP_GLOBAL_REDIRECT_URLS.some(url => req.url.includes(url));
+
         if (err.status === 401) {
-          this.router.navigate(['/login']);
-        } else if (err.status === 403) {
+          // Session invalide (token absent, expiré ou invalide) : on nettoie.
+          // Le backend distingue désormais via err.error.expired === true.
+          const expired = !!err.error?.expired;
+          this.userAuthService.clear();
+
+          if (localHandling) {
+            // Laisse le composant afficher son état d'erreur avec un lien de reconnexion.
+            if (expired) {
+              console.warn('Session expirée — veuillez vous reconnecter.');
+            }
+          } else {
+            this.router.navigate(['/login']);
+          }
+        } else if (err.status === 403 && !localHandling) {
+          // 403 global (navigation/rôle) → page forbidden.
+          // Pour /api/reservations, le composant gère le 403 localement
+          // (ex. annulation de la réservation d'un autre → message inline).
           this.router.navigate(['/forbidden']);
         }
         // TOUJOURS re-transmettre l'erreur originale

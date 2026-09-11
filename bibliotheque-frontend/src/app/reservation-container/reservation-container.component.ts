@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Books } from '../_model/books';
 import { Users } from '../_model/users';
@@ -6,6 +7,7 @@ import { Reservation, StatutReservation } from '../_model/reservation';
 import { ReservationService } from '../_service/reservation.service';
 import { BooksService } from '../_service/books.service';
 import { UsersService } from '../_service/users.service';
+import { UserAuthService } from '../_service/user-auth.service';
 import { TranslationService } from '../_service/translation.service';
 
 @Component({
@@ -43,8 +45,20 @@ export class ReservationContainerComponent implements OnInit {
     private reservationService: ReservationService,
     private booksService: BooksService,
     private usersService: UsersService,
+    private userAuthService: UserAuthService,
+    private router: Router,
     public t: TranslationService
   ) { }
+
+  /** Le personnel (BIBLIOTHECAIRE / Admin) peut réserver pour n'importe quel adhérent. */
+  get isStaff(): boolean {
+    return this.usersService.roleMatch(['BIBLIOTHECAIRE', 'Admin']);
+  }
+
+  /** Identifiant de l'utilisateur connecté (pour le droit d'annulation côté liste). */
+  get currentUserId(): number | null {
+    return this.userAuthService.getUserId() ?? null;
+  }
 
   ngOnInit() {
     this.loadReservations();
@@ -79,21 +93,23 @@ export class ReservationContainerComponent implements OnInit {
   loadBooks() {
     this.booksService.getBooksList().subscribe({
       next: (books) => {
-        // Règle : seuls les livres indisponibles (0 copies) peuvent être réservés
+        // Règle RG-01 : seuls les livres indisponibles (0 copies) peuvent être réservés
         this.books = books.filter(b => b.noOfCopies <= 0);
         books.forEach(b => this.bookNames.set(b.bookId, b.bookName));
       },
       error: (err: HttpErrorResponse) => {
-        if (err.status === 0) {
-          this.formError = 'Impossible de charger les livres. Le serveur est injoignable.';
-        } else {
+        if (err.status !== 0) {
           this.formError = `Erreur lors du chargement des livres : ${err.error?.message || 'Erreur ' + err.status}`;
         }
       }
     });
   }
 
+  /** Liste des adhérents — endpoint Admin, réservé au personnel. */
   loadUsers() {
+    if (!this.isStaff) {
+      return; // un adhérent n'a pas besoin de la liste : le backend force userId de toute façon (RS-04)
+    }
     this.usersService.getUsersList().subscribe({
       next: (users) => {
         this.users = users;
@@ -127,7 +143,9 @@ export class ReservationContainerComponent implements OnInit {
   }
 
   get isFormValid(): boolean {
-    return this.selectedBookId !== null && this.selectedUserId !== null;
+    if (this.selectedBookId === null) return false;
+    // Un adhérent ne choisit pas l'adhérent : le backend impose son identité (RS-04)
+    return this.isStaff ? this.selectedUserId !== null : true;
   }
 
   onSubmitReservation() {
@@ -138,7 +156,11 @@ export class ReservationContainerComponent implements OnInit {
 
     const reservation = new Reservation();
     reservation.bookId = this.selectedBookId!;
-    reservation.userId = this.selectedUserId!;
+    if (this.isStaff) {
+      reservation.userId = this.selectedUserId!;
+    }
+    // Pour un ADHERENT, pas de userId dans le corps : le backend écrase/force
+    // l'identité depuis le token JWT (RS-04).
 
     this.reservationService.create(reservation).subscribe({
       next: () => {
@@ -155,6 +177,12 @@ export class ReservationContainerComponent implements OnInit {
         this.formError = this.extractErrorMessage(err);
       }
     });
+  }
+
+  /** Peut-on annuler la réservation donnée ? (propriété ou personnel) */
+  canCancelReservation(reservation: Reservation): boolean {
+    if (this.isStaff) return true;
+    return reservation.userId === this.userAuthService.getUserId();
   }
 
   // --- Cancel confirmation ---
@@ -199,21 +227,38 @@ export class ReservationContainerComponent implements OnInit {
 
   /**
    * Extrait un message lisible depuis une HttpErrorResponse.
-   * Gère tous les cas : 400, 404, 409, 500, réseau.
+   * Gère tous les cas : 400, 401, 403, 404, 409, 500, réseau.
    */
   private extractErrorMessage(err: HttpErrorResponse): string {
     if (err.status === 0) {
       return 'Le serveur est injoignable. Vérifiez que le backend est démarré.';
     }
     if (err.error?.message) {
+      // 401 spécifique : proposer la reconnexion (session expirée ou invalide)
+      if (err.status === 401) {
+        return err.error.expired
+          ? err.error.message + ' Cliquez sur Réessayer pour vous reconnecter.'
+          : 'Session invalide. Reconnectez-vous pour continuer.';
+      }
       return err.error.message;
     }
     switch (err.status) {
       case 400: return 'Les données envoyées sont invalides. Vérifiez les champs du formulaire.';
+      case 401: return 'Authentification requise. Veuillez vous reconnecter.';
+      case 403: return "Accès refusé : vous n'avez pas les droits nécessaires pour cette action.";
       case 404: return 'La ressource demandée est introuvable.';
       case 409: return 'Conflit : cette opération ne peut pas être effectuée dans l\'état actuel.';
       case 500: return 'Erreur interne du serveur. Veuillez réessayer.';
       default: return 'Erreur ' + err.status + ' : une erreur inattendue est survenue.';
     }
+  }
+
+  /** Sur une erreur de CHARGEMENT 401 : proposer la reconnexion plutôt qu'un simple retry. */
+  onErrorRetry(): void {
+    if (this.error && this.error.includes('reconnect')) {
+      this.router.navigate(['/login']);
+      return;
+    }
+    this.onRetry();
   }
 }

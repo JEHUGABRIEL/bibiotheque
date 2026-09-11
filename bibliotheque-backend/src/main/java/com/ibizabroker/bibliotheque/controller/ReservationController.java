@@ -6,10 +6,20 @@ import com.ibizabroker.bibliotheque.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * Endpoints de réservation — sécurisés (Séance 4).
+ *
+ * RS-01 : aucun endpoint n'est permitAll → 401 sans token (JwtAuthenticationEntryPoint).
+ * RS-02 : @PreAuthorize distingue ADHERENT et BIBLIOTHECAIRE → 403 sinon.
+ * RS-03 / RS-05 : la liste et les accès individuels sont filtrés par l'identité du token (service).
+ * RS-04 : l'identité de l'adhérent vient de l'Authentication (token JWT), jamais du corps de la requête.
+ */
 @RestController
 @RequestMapping("/api/reservations")
 public class ReservationController {
@@ -17,26 +27,56 @@ public class ReservationController {
     @Autowired
     private ReservationService reservationService;
 
+    /**
+     * ADHERENT : uniquement ses propres réservations (filtre service).
+     * BIBLIOTHECAIRE : toutes les réservations.
+     */
     @GetMapping
-    public ResponseEntity<List<Reservation>> getAll(@RequestParam(required = false) StatutReservation statut) {
-        List<Reservation> list;
-        if (statut != null) {
-            list = reservationService.findByStatut(statut);
-        } else {
-            list = reservationService.findAll();
-        }
+    @PreAuthorize("hasRole('ADHERENT') or hasRole('BIBLIOTHECAIRE')")
+    public ResponseEntity<List<Reservation>> getAll(@RequestParam(required = false) StatutReservation statut,
+                                                    Authentication authentication) {
+        List<Reservation> list = reservationService.findAllFor(statut, authentication.getName());
         return ResponseEntity.ok(list);
     }
 
+    /**
+     * ADHERENT : pour lui-même uniquement — le service écrase l'userId du corps par celui du token (RS-04).
+     * BIBLIOTHECAIRE : pour n'importe qui.
+     */
     @PostMapping
-    public ResponseEntity<Reservation> create(@RequestBody Reservation reservation) {
-        Reservation created = reservationService.create(reservation);
+    @PreAuthorize("hasRole('ADHERENT') or hasRole('BIBLIOTHECAIRE')")
+    public ResponseEntity<Reservation> create(@RequestBody Reservation reservation,
+                                              Authentication authentication) {
+        Reservation created = reservationService.createFor(reservation, authentication.getName());
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    /**
+     * ADHERENT : si la réservation lui appartient (sinon 403, RS-03).
+     * BIBLIOTHECAIRE : toutes.
+     */
+    @GetMapping("/{id}")
+    @PreAuthorize("hasRole('ADHERENT') or hasRole('BIBLIOTHECAIRE')")
+    public ResponseEntity<Reservation> getById(@PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(reservationService.getByIdFor(id, authentication.getName()));
+    }
+
+    /**
+     * Annulation — mêmes règles de propriété que la lecture (RS-03).
+     */
     @PatchMapping("/{id}/annuler")
-    public ResponseEntity<Reservation> cancel(@PathVariable Long id) {
-        Reservation updated = reservationService.cancel(id);
-        return ResponseEntity.ok(updated);
+    @PreAuthorize("hasRole('ADHERENT') or hasRole('BIBLIOTHECAIRE')")
+    public ResponseEntity<Reservation> cancel(@PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(reservationService.cancelFor(id, authentication.getName()));
+    }
+
+    /**
+     * Réservé au BIBLIOTHECAIRE — un ADHERENT reçoit 403 (RS-02).
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('BIBLIOTHECAIRE')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        reservationService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

@@ -3,6 +3,7 @@ package com.ibizabroker.bibliotheque.exceptions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -59,6 +60,16 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 403 — Un adhérent tente d'accéder à la réservation d'un autre (RS-03)
+     */
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, String>> handleForbidden(ForbiddenException e) {
+        log.warn("Accès refusé : {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", e.getMessage()));
+    }
+
+    /**
      * 404 — Ressource introuvable
      */
     @ExceptionHandler(NotFoundException.class)
@@ -84,6 +95,17 @@ public class GlobalExceptionHandler {
         log.warn("Violation de contrainte DB: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("message", "Cette opération viole une contrainte de la base de données (doublon ou référence manquante)"));
+    }
+
+    /**
+     * 403 — Accès refusé : l'utilisateur est authentifié mais n'a pas le droit.
+     * À déclarer AVANT le handler générique Exception, sinon Spring la transformerait en 500.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAccessDenied(AccessDeniedException e) {
+        log.warn("Accès refusé : {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("message", "Accès refusé : vous n'avez pas les droits nécessaires"));
     }
 
     /**

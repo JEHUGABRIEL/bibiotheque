@@ -17,6 +17,10 @@ export class ReservationService {
     return this.httpClient.get<Reservation[]>(this.baseURL);
   }
 
+  getById(id: number): Observable<Reservation> {
+    return this.httpClient.get<Reservation>(`${this.baseURL}/${id}`);
+  }
+
   getByStatut(statut: StatutReservation): Observable<Reservation[]> {
     return this.httpClient.get<Reservation[]>(`${this.baseURL}?statut=${statut}`);
   }

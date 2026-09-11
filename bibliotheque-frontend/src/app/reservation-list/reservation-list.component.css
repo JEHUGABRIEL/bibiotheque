@@ -1,0 +1,7 @@
+.row-clickable {
+  cursor: pointer;
+}
+
+.row-clickable:hover {
+  background: rgba(124, 77, 255, 0.05);
+}

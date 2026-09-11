@@ -23,6 +23,7 @@
   [isStaff]="isStaff"
   (filterChange)="onFilterChange($event)"
   (cancelRequest)="openCancelConfirm($event)"
+  (openDetails)="openDetails($event)"
   (retryRequest)="onErrorRetry()">
 </app-reservation-list>
 

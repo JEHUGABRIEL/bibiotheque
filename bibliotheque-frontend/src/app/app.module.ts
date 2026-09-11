@@ -26,6 +26,7 @@ import { BorrowBookComponent } from './borrow-book/borrow-book.component';
 import { ReturnBookComponent } from './return-book/return-book.component';
 import { ReservationContainerComponent } from './reservation-container/reservation-container.component';
 import { ReservationListComponent } from './reservation-list/reservation-list.component';
+import { ReservationDetailsComponent } from './reservation-details/reservation-details.component';
 import { ReservationFormComponent } from './reservation-form/reservation-form.component';
 import { SidebarComponent } from './sidebar/sidebar.component';
 import { ModalComponent } from './_shared/modal.component';
@@ -51,6 +52,7 @@ import { ConfirmModalComponent } from './_shared/confirm-modal.component';
     ReturnBookComponent,
     ReservationContainerComponent,
     ReservationListComponent,
+    ReservationDetailsComponent,
     ReservationFormComponent,
     SidebarComponent,
     ModalComponent,

@@ -89,6 +89,21 @@ export class UsersListComponent implements OnInit {
     this.router.navigate(['user-details', userId]);
   }
 
+  /** Badge par rôle — les deux modèles de rôles sont supportés. */
+  badgeClassForRole(roleName?: string): string {
+    switch (roleName) {
+      case 'Admin': return 'status-badge status-honoree';
+      case 'BIBLIOTHECAIRE': return 'status-badge status-honoree';
+      case 'ADHERENT': return 'status-badge status-disponible';
+      default: return 'status-badge status-disponible';
+    }
+  }
+
+  /** Libellé traduit par rôle — quel que soit le modèle. */
+  roleLabelForRole(roleName?: string): string {
+    return this.t.t(this.usersService.roleLabelKey(roleName || ''));
+  }
+
   updateUser(userId: number) {
     this.router.navigate(['update-user', userId]);
   }

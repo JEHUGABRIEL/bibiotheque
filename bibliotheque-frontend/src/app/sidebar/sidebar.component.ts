@@ -34,16 +34,24 @@ export class SidebarComponent {
     public t: TranslationService
   ) {}
 
+  /** Accès section gestion — personnel, tous modèles de rôles confondus. */
   get isAdmin(): boolean {
-    return this.userService.roleMatch(['Admin', 'BIBLIOTHECAIRE']);
+    return this.userService.isStaff();
   }
 
   get isUser(): boolean {
-    return this.userService.roleMatch(['User']);
+    return this.userService.roleMatch(['User', 'ADHERENT']);
   }
 
   get isLoggedIn(): boolean {
     return !!this.userAuthService.isLoggedIn();
+  }
+
+  /** Libellé du premier rôle du compte (quel que soit le modèle). */
+  get roleLabel(): string {
+    const roles: any = this.userAuthService.getRoles();
+    const roleName = roles?.[0]?.roleName || '';
+    return this.t.t(this.userService.roleLabelKey(roleName));
   }
 
   get userName(): string {

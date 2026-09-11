@@ -23,6 +23,7 @@ export class ReservationListComponent {
   @Output() cancelRequest = new EventEmitter<Reservation>();
   @Output() retryRequest = new EventEmitter<void>();
   @Output() createRequest = new EventEmitter<void>();
+  @Output() openDetails = new EventEmitter<Reservation>();
 
   selectedFilter: StatutReservation | null = null;
   statuts = Object.values(StatutReservation);
@@ -66,6 +67,10 @@ export class ReservationListComponent {
 
   onCancel(reservation: Reservation) {
     this.cancelRequest.emit(reservation);
+  }
+
+  onOpen(reservation: Reservation) {
+    this.openDetails.emit(reservation);
   }
 
   onCreate() {

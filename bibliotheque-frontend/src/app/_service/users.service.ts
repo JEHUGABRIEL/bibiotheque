@@ -5,6 +5,11 @@ import { Observable } from 'rxjs';
 import { Users } from '../_model/users';
 import { UserAuthService } from './user-auth.service';
 
+/** Rôles « personnel » — accès complet à la gestion (biblio + rôle hérité Admin). */
+export const STAFF_ROLES = ['Admin', 'BIBLIOTHECAIRE'];
+/** Rôles « adhérent » — emprunt / retour / ses réservations. */
+export const MEMBER_ROLES = ['User', 'ADHERENT'];
+
 @Injectable({
   providedIn: 'root'
 })
@@ -36,6 +41,23 @@ export class UsersService {
     return userRoles.some((r: any) =>
       allowedRoles.some((allowed: any) => r?.roleName === allowed)
     );
+  }
+
+  /** Le compte connecté est-il du personnel (Admin ou BIBLIOTHECAIRE) ? */
+  isStaff(): boolean {
+    return this.roleMatch(STAFF_ROLES);
+  }
+
+  /** Un nom de rôle désigne-t-il du personnel ? (badges, selects, droits UI) */
+  isStaffRole(roleName: string): boolean {
+    return STAFF_ROLES.includes(roleName);
+  }
+
+  /** Clé de traduction du libellé d'un rôle, quel que soit le modèle (legacy ou Séance 4). */
+  roleLabelKey(roleName: string): string {
+    if (roleName === 'Admin') return 'users.role.admin';
+    if (roleName === 'BIBLIOTHECAIRE') return 'users.role.bibliothecaire';
+    return 'users.role.user';
   }
 
   getUsersList(): Observable<Users[]> {

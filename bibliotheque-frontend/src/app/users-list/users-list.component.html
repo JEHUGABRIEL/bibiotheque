@@ -44,14 +44,13 @@
         <td><strong>{{ user.name }}</strong></td>
         <td>{{ user.username }}</td>
         <td>
-          <span [class]="user.role[0].roleName === 'Admin' ? 'status-badge status-honoree' : 'status-badge status-disponible'">
-            {{ user.role[0].roleName === 'Admin' ? t.t('users.role.admin') : t.t('users.role.user') }}
+          <span [class]="badgeClassForRole(user.role?.[0]?.roleName)">
+            {{ roleLabelForRole(user.role?.[0]?.roleName) }}
           </span>
         </td>
         <td>
           <div style="display: flex; gap: 0.4rem;">
-            <button *ngIf="user.role[0].roleName === 'User'"
-                    (click)="userDetails(user.userId)" class="action-btn action-btn-primary" title="Historique">
+            <button (click)="userDetails(user.userId)" class="action-btn action-btn-primary" title="Détails">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                 <path d="M10.5 8a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0"/>
                 <path d="M0 8s3-5.5 8-5.5S16 8 16 8s-3 5.5-8 5.5S0 8 0 8m8 3.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7"/>
@@ -110,6 +109,7 @@
         <select [(ngModel)]="newSelectedRole" name="role" required>
           <option value="User">{{ t.t('users.role.user') }}</option>
           <option value="Admin">{{ t.t('users.role.admin') }}</option>
+          <option value="BIBLIOTHECAIRE">{{ t.t('users.role.bibliothecaire') }}</option>
         </select>
       </div>
     </div>
@@ -170,6 +170,7 @@
         <select [(ngModel)]="editSelectedRole" name="role" required>
           <option value="User">{{ t.t('users.role.user') }}</option>
           <option value="Admin">{{ t.t('users.role.admin') }}</option>
+          <option value="BIBLIOTHECAIRE">{{ t.t('users.role.bibliothecaire') }}</option>
         </select>
       </div>
     </div>

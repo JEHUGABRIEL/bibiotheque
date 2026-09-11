@@ -74,7 +74,7 @@
       <div class="user-avatar">{{ userInitial }}</div>
       <div class="user-details">
         <span class="user-name">{{ userName }}</span>
-        <span class="user-role">{{ isAdmin ? t.t('users.role.admin') : t.t('users.role.user') }}</span>
+        <span class="user-role">{{ roleLabel }}</span>
       </div>
     </div>
     <button class="btn-logout" (click)="openLogoutConfirm()">

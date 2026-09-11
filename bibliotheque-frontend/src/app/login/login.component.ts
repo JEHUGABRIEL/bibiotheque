@@ -84,7 +84,8 @@ export class LoginComponent implements OnInit, OnDestroy {
         this.userAuthService.setName(response.user.name);
 
         const role = response.user.role[0].roleName;
-        if (role === 'Admin') {
+        // Les deux modèles de rôles : Admin (hérité) et BIBLIOTHECAIRE (Séance 4) = personnel
+        if (role === 'Admin' || role === 'BIBLIOTHECAIRE') {
           this.router.navigate(['/books']);
         } else {
           this.router.navigate(['/borrow-book']);

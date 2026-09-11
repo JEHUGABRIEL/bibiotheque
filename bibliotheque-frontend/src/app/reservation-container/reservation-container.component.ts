@@ -52,7 +52,7 @@ export class ReservationContainerComponent implements OnInit {
 
   /** Le personnel (BIBLIOTHECAIRE / Admin) peut réserver pour n'importe quel adhérent. */
   get isStaff(): boolean {
-    return this.usersService.roleMatch(['BIBLIOTHECAIRE', 'Admin']);
+    return this.usersService.isStaff();
   }
 
   /** Identifiant de l'utilisateur connecté (pour le droit d'annulation côté liste). */
@@ -128,6 +128,10 @@ export class ReservationContainerComponent implements OnInit {
   onFilterChange(statut: StatutReservation | null) {
     this.currentFilter = statut;
     this.loadReservations();
+  }
+
+  openDetails(reservation: Reservation) {
+    this.router.navigate(['/reservation-details', reservation.id]);
   }
 
   onRetry() {

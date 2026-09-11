@@ -65,7 +65,7 @@ Phrase clé : « L'identité vient du token, jamais du corps de la requête. »
 ```bash
 ./mvnw test
 ```
-→ 11/11 verts. Insister : les tests tournent **sans base de données** (Postgres arrêté — le montrer si demandé : `docker ps`).
+→ 13/13 verts. Insister : les tests tournent **sans base de données** (Postgres arrêté — le montrer si demandé : `docker ps`).
 - Unitaires (`ReservationServiceQuotaTest`) : Mockito pur, repository simulé, quota 3 (2 actifs → OK, 3 actifs → refus).
 - Intégration (`ReservationSecurityIntegrationTest`) : vrai contexte Spring + **vrais tokens signés** passant par le vrai filtre JWT → 401 / 200 / 403.
 
@@ -92,7 +92,7 @@ curl -i http://localhost:8080/api/reservations -H "Authorization: Bearer <token_
 # → 401 {"message":"Session expirée, veuillez vous reconnecter","expired":true}
 ```
 2. **Journalisation des refus (fait)** — lancer un appel refusé puis `grep "Accès refusé"` dans la console du backend : chaque refus loggue **[401]/[403], la méthode, l'URI, l'utilisateur et la raison** (entry point, AccessDeniedHandler, ForbiddenException).
-3. **RG-01 (démontré en live)** — réserver « 1984 » (3 exemplaires) → 409 « livre disponible » ; couvert en plus par la démo du tableau §3.
+3. **RG-01 (fait + testé)** — réserver « 1984 » (3 exemplaires) → 409 « livre disponible » ; couvert par 2 tests d'intégration (409 si disponible, 201 EN_ATTENTE si indisponible).
 
 ## 6. Avant de partir — checklist
 
@@ -117,9 +117,10 @@ Fermeture de `/api/reservations` : authentification obligatoire, rôles ADHERENT
 **Bonus :**
 - **Expiration du token** — `JwtRequestFilter` + `JwtAuthenticationEntryPoint` : 401 « Session expirée, veuillez vous reconnecter » (+ `expired:true`)
 - **Journalisation des accès refusés** — chaque 401/403 est loggué avec qui, où et pourquoi (entry point, `AccessDeniedHandler`, `GlobalExceptionHandler`)
+- **RG-01 testé** — 2 tests d'intégration : 409 sur livre disponible, 201 + EN_ATTENTE sur livre indisponible
 
-**Tests (11/11 verts, sans base de données) :**
+**Tests (13/13 verts, sans base de données) :**
 - `ReservationServiceQuotaTest` — RG-03, repository mocké (Mockito), quota 3 actifs
-- `ReservationSecurityIntegrationTest` — vrais tokens signés + vrai filtre JWT : 401 / 200 filtré / 403 propriétaire / 403 DELETE / token expiré → message dédié
+- `ReservationSecurityIntegrationTest` — vrais tokens signés + vrai filtre JWT : 401 / 200 filtré / 403 propriétaire / 403 DELETE / token expiré → message dédié / RG-01 (409 livre disponible, 201 livre indisponible)
 
 *(coller ici la capture du résultat `./mvnw test`)*

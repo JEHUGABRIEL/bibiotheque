@@ -1,7 +1,9 @@
 package com.ibizabroker.bibliotheque;
 
+import com.ibizabroker.bibliotheque.dao.BooksRepository;
 import com.ibizabroker.bibliotheque.dao.ReservationRepository;
 import com.ibizabroker.bibliotheque.dao.UsersRepository;
+import com.ibizabroker.bibliotheque.entity.Books;
 import com.ibizabroker.bibliotheque.entity.Reservation;
 import com.ibizabroker.bibliotheque.entity.Role;
 import com.ibizabroker.bibliotheque.entity.StatutReservation;
@@ -26,11 +28,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,6 +44,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * Tests d'intégration de la sécurité sur GET /api/reservations et GET /api/reservations/{id}.
  *
  * Le contexte Spring démarre entièrement : filtre JWT réel + SecurityConfig + @PreAuthorize.
+ * Couvre aussi RG-01 : seule la réservation d'un livre INDISPONIBLE (0 exemplaire) est acceptée.
  * Les tokens sont de VRAIS tokens signés produits par JwtUtil (comme en production) et passent
  * par le pipeline complet : JwtRequestFilter → JwtService (rôles → ROLE_x) → @PreAuthorize.
  *
@@ -62,6 +69,9 @@ class ReservationSecurityIntegrationTest {
     @MockBean
     private UsersRepository usersRepository;
 
+    @MockBean
+    private BooksRepository booksRepository;
+
     // ------------------------------------------------------------------
     // Fixtures
     // ------------------------------------------------------------------
@@ -77,6 +87,14 @@ class ReservationSecurityIntegrationTest {
         role.setRoleName(roleName);
         user.setRole(Set.of(role));
         return user;
+    }
+
+    private Books livre(int id, String nom, int copies) {
+        Books book = new Books();
+        book.setBookId(id);
+        book.setBookName(nom);
+        book.setNoOfCopies(copies);
+        return book;
     }
 
     private Reservation reservationDe(Integer userId, long id) {
@@ -189,5 +207,45 @@ class ReservationSecurityIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").value("Session expirée, veuillez vous reconnecter"))
                 .andExpect(jsonPath("$.expired").value(true));
+    }
+
+    // ------------------------------------------------------------------
+    // Bonus — RG-01 : seul un livre INDISPONIBLE (0 exemplaire) est réservable
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Bonus RG-01 : réserver un livre disponible (copies > 0) est refusé (409)")
+    void create_livreDisponible_renvoie409() throws Exception {
+        when(usersRepository.findByUsername("biblio"))
+                .thenReturn(Optional.of(utilisateur("biblio", 1, "BIBLIOTHECAIRE")));
+        when(booksRepository.findById(2)).thenReturn(Optional.of(livre(2, "1984", 3)));
+
+        mockMvc.perform(post(ENDPOINT)
+                        .header("Authorization", "Bearer " + tokenPour("biblio"))
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"bookId\":2,\"userId\":10}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", containsString("disponible")));
+    }
+
+    @Test
+    @DisplayName("Bonus RG-01 : un livre indisponible (0 exemplaire) est accepté (201, EN_ATTENTE)")
+    void create_livreIndisponible_estAccepte() throws Exception {
+        when(usersRepository.findByUsername("alice"))
+                .thenReturn(Optional.of(utilisateur("alice", 10, "ADHERENT")));
+        when(usersRepository.findById(10)).thenReturn(Optional.of(utilisateur("alice", 10, "ADHERENT")));
+        when(booksRepository.findById(3)).thenReturn(Optional.of(livre(3, "Dune", 0)));
+        when(reservationRepository.existsByBookIdAndStatutIn(eq(3), anyList())).thenReturn(false);
+        when(reservationRepository.countByUserIdAndStatutIn(eq(10), anyList())).thenReturn(0L);
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(post(ENDPOINT)
+                        .header("Authorization", "Bearer " + tokenPour("alice"))
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"bookId\":3,\"userId\":10}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.statut").value("EN_ATTENTE"))
+                .andExpect(jsonPath("$.userId").value(10));
     }
 }

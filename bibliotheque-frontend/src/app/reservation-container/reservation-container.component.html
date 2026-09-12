@@ -47,14 +47,22 @@
                 (mouseleave)="hoveredIndex = -1"
                 (mousedown)="selectBookSuggestion(book)">
           <span class="autocomplete-name">{{ book.bookName }}</span>
-          <span class="autocomplete-meta">{{ book.bookAuthor }}</span>
+          <span class="autocomplete-meta">
+            {{ book.bookAuthor }}
+            <span [class]="isBookReservable(book) ? 'status-badge status-expiree' : 'status-badge status-disponible'">
+              {{ isBookReservable(book) ? '0 ex. — réservable' : book.noOfCopies + ' ex. — indisponible' }}
+            </span>
+          </span>
+        </button>
+        <!-- Livre absent du catalogue : le créer puis le réserver -->
+        <button type="button" class="autocomplete-item autocomplete-create" (mousedown)="selectNewBook()">
+          <span class="autocomplete-name">＋ {{ createNewLabel }}</span>
+          <span class="autocomplete-meta">{{ createNewHint }}</span>
         </button>
       </div>
       <div class="form-hint" *ngIf="selectedBookId !== null">✓ {{ bookQuery }}</div>
+      <div class="form-hint" *ngIf="selectedBookId === null && newBookName">✓ {{ newBookName }} — nouveau livre</div>
       <div class="form-hint form-hint-muted">{{ t.t('reservations.select.book.hint') }}</div>
-      <div *ngIf="books.length === 0" class="form-empty-select">
-        {{ t.t('reservations.no.books') }}
-      </div>
     </div>
     <div class="form-group">
       <label>Adhérent</label>
@@ -91,7 +99,7 @@
     <div class="form-actions">
       <button type="button" class="btn-action btn-action-outline" (click)="showCreateModal = false">{{ t.t('btn.cancel') }}</button>
       <button type="submit" class="btn-action btn-action-primary"
-              [disabled]="!isFormValid || formSubmitting || books.length === 0 || (isStaff && users.length === 0)">
+              [disabled]="!isFormValid || formSubmitting || (isStaff && users.length === 0)">
         <span *ngIf="formSubmitting" class="spinner-sm"></span>
         {{ formSubmitting ? '…' : t.t('reservations.add') }}
       </button>

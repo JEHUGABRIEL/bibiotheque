@@ -20,6 +20,14 @@ public class Reservation {
     private Integer bookId;
     private Integer userId;
 
+    /**
+     * Nom d'un livre PAS encore enregistré — transporté par la requête de
+     * réservation puis résolu/créé côté service. Jamais persisté (sinon
+     * une colonne sans rapport apparaîtrait sur la table reservation).
+     */
+    @Transient
+    private String newBookName;
+
     @Enumerated(EnumType.STRING)
     private StatutReservation statut;
 

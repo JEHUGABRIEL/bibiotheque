@@ -22,9 +22,9 @@ describe('ReservationContainerComponent', () => {
     const userAuthStub = { getUserId: () => (opts.userId === undefined ? 51 : opts.userId) } as any;
     return new ReservationContainerComponent(
       {} as any,                                    // ReservationService — non utilisé ici
-      {} as any,                                    // BooksService — non utilisé ici
       usersServiceStub as any,
       userAuthStub as any,
+      { snapshot: {}, queryParams: {} } as any,     // ActivatedRoute — non utilisé ici
       new TranslationService()
     );
   };
@@ -51,11 +51,32 @@ describe('ReservationContainerComponent', () => {
   // ---------- Recherche prédictive ----------
 
   describe('recherche prédictive du livre', () => {
-    it('ne suggère que des livres réservables correspondant à la requête', () => {
+    it('suggère TOUS les livres correspondant à la requête (disponibles inclus, marqués non réservables)', () => {
       const c = makeComponent();
       c.books = [makeBook(1, 'Dune', 0), makeBook(2, '1984', 3), makeBook(3, 'Du côté de chez Swann', 0)];
       c.bookQuery = 'du';
       expect(c.bookSuggestions.map(b => b.bookId)).toEqual([1, 3]);
+      // 1984 ne contient pas "du" ; mais un livre disponible qui matche serait inclus :
+      c.books = [makeBook(1, 'Dune', 0), makeBook(4, 'Duel', 5)];
+      expect(c.bookSuggestions.map(b => b.bookId)).toEqual([1, 4]);
+    });
+
+    it('l\'option « créer ce livre » apparaît dès qu\'un texte libre est saisi', () => {
+      const c = makeComponent();
+      c.books = [];
+      c.onBookQueryInput({ target: { value: 'Dune' } } as any);
+      expect(c.canCreateNewBook).toBeTrue();
+      expect(c.createNewLabel).toContain('Dune');
+    });
+
+    it('selectNewBook verrouille le nom du nouveau livre sans bookId', () => {
+      const c = makeComponent();
+      c.bookQuery = '  Dune  ';
+      c.selectNewBook();
+      expect(c.selectedBookId).toBeNull();
+      expect(c.newBookName).toBe('Dune');
+      expect(c.showBookSuggestions).toBeFalse();
+      expect(c.isFormValid).toBeTrue();
     });
 
     it('la recherche est insensible à la casse et aux accents', () => {
@@ -119,10 +140,18 @@ describe('ReservationContainerComponent', () => {
       expect(c.isFormValid).toBeTrue();
     });
 
-    it('un adhérent ne peut rien soumettre sans livre sélectionné', () => {
+    it('un adhérent ne peut rien soumettre sans livre sélectionné ni nom saisi', () => {
       const c = makeComponent({ staff: false });
       c.selectedBookId = null;
+      c.newBookName = null;
       expect(c.isFormValid).toBeFalse();
+    });
+
+    it('un nom de nouveau livre suffit, sans bookId', () => {
+      const c = makeComponent({ staff: false });
+      c.selectedBookId = null;
+      c.newBookName = 'Livre jamais enregistré';
+      expect(c.isFormValid).toBeTrue();
     });
 
     it('le personnel doit choisir l\'adhérent concerné', () => {

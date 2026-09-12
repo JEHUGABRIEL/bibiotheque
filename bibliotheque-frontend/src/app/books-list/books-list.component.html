@@ -231,4 +231,23 @@
       </span>
     </div>
   </div>
+
+  <div class="form-actions" *ngIf="!detailLoading && detailBook" style="flex-wrap: wrap;">
+    <button type="button" class="btn-action btn-action-outline" (click)="showDetailModal = false">{{ t.t('btn.close') }}</button>
+    <div style="display: flex; gap: 0.5rem; margin-left: auto; flex-wrap: wrap;">
+      <button *ngIf="isStaff" type="button" class="btn-action btn-action-warning" (click)="editFromDetail()" [title]="t.t('btn.edit')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5v-1a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.293.458"/>
+        </svg>
+        {{ t.t('btn.edit') }}
+      </button>
+      <!-- Réserver si indisponible (0 exemplaire, RG-01), emprunter si disponible -->
+      <button *ngIf="detailBook.noOfCopies <= 0" type="button" class="btn-action btn-action-primary" (click)="reserveFromDetail()">
+        {{ t.t('books.details.reserve') }}
+      </button>
+      <button *ngIf="detailBook.noOfCopies > 0" type="button" class="btn-action btn-action-success" (click)="borrowFromDetail()">
+        {{ t.t('borrow.action') }}
+      </button>
+    </div>
+  </div>
 </app-modal>

@@ -108,20 +108,44 @@ public class ReservationService {
     // Règles métier (inchangées — séance précédente)
     // ------------------------------------------------------------------
 
+    /**
+     * Résout le livre visé par une réservation :
+     * <ul>
+     *   <li>bookId fourni → livre existant (404 sinon) ;</li>
+     *   <li>sinon newBookName → recherche par nom insensible à la casse ;
+     *   s'il n'existe pas, il est CRÉÉ à 0 exemplaire puis réservé —
+     *   c'est la réservation d'un livre non enregistré.</li>
+     * </ul>
+     */
+    private Books resolveOrCreateBook(Integer bookId, String newBookName) {
+        if (bookId != null) {
+            return booksRepository.findById(bookId)
+                    .orElseThrow(() -> new NotFoundException("Livre avec l'id " + bookId + " introuvable"));
+        }
+        String name = (newBookName == null) ? null : newBookName.trim();
+        if (name == null || name.isEmpty()) {
+            throw new BadRequestException("Le livre à réserver est requis (id ou nom)");
+        }
+        return booksRepository.findByBookNameIgnoreCase(name)
+                .orElseGet(() -> {
+                    Books created = new Books();
+                    created.setBookName(name);
+                    created.setNoOfCopies(0);
+                    return booksRepository.save(created);
+                });
+    }
+
     public Reservation create(Reservation reservation) {
-        Integer bookId = reservation.getBookId();
         Integer userId = reservation.getUserId();
 
-        if (bookId == null) {
-            throw new BadRequestException("L'identifiant du livre est requis");
-        }
         if (userId == null) {
             throw new BadRequestException("L'identifiant de l'adhérent est requis");
         }
 
-        // Vérifier que le livre existe
-        Books book = booksRepository.findById(bookId)
-                .orElseThrow(() -> new NotFoundException("Livre avec l'id " + bookId + " introuvable"));
+        // Livre existant par id, OU livre non enregistré résolu/créé par son nom
+        Books book = resolveOrCreateBook(reservation.getBookId(), reservation.getNewBookName());
+        Integer bookId = book.getBookId();
+        reservation.setBookId(bookId);
 
         // RG-01 : un livre DISPONIBLE (copies > 0) ne peut PAS être réservé
         if (book.getNoOfCopies() > 0) {

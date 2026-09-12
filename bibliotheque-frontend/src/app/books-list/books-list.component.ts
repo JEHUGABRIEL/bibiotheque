@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Books } from '../_model/books'
 import { BooksService } from '../_service/books.service';
+import { UsersService } from '../_service/users.service';
 import { TranslationService } from '../_service/translation.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -76,8 +77,14 @@ export class BooksListComponent implements OnInit {
   }
 
   constructor(private booksService: BooksService,
+    private usersService: UsersService,
     private router: Router,
     public t: TranslationService) { }
+
+  /** Le personnel peut modifier un livre depuis la modale de détail. */
+  get isStaff(): boolean {
+    return this.usersService.isStaff();
+  }
 
   ngOnInit(): void {
     this.getBooks();
@@ -137,6 +144,25 @@ export class BooksListComponent implements OnInit {
         this.detailError = err.error?.message || 'Erreur ' + err.status;
       }
     });
+  }
+
+  /** Depuis la modale de détail : modifier le livre (ouvre la modale d'édition). */
+  editFromDetail() {
+    if (!this.detailBook) return;
+    this.showDetailModal = false;
+    this.openEditModal(this.detailBook);
+  }
+
+  /** Depuis la modale de détail : réserver ce livre indisponible (RG-01). */
+  reserveFromDetail() {
+    if (!this.detailBook) return;
+    this.router.navigate(['/reservations'], { queryParams: { reserve: this.detailBook.bookId } });
+  }
+
+  /** Depuis la modale de détail : emprunter ce livre disponible. */
+  borrowFromDetail() {
+    if (!this.detailBook) return;
+    this.router.navigate(['/borrow-book'], { queryParams: { book: this.detailBook.bookId } });
   }
 
   // --- Create modal ---

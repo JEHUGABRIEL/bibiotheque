@@ -9,6 +9,8 @@ export enum StatutReservation {
 export class Reservation {
   id: number;
   bookId: number;
+  /** Nom d'un livre PAS encore enregistré — le backend le crée à 0 exemplaire puis le réserve. */
+  newBookName?: string;
   userId: number;
   statut: StatutReservation;
   dateReservation: Date;

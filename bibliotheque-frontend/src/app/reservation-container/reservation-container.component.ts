@@ -1,13 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import { ActivatedRoute } from '@angular/router';
 import { Books } from '../_model/books';
 import { Users } from '../_model/users';
 import { Reservation, StatutReservation } from '../_model/reservation';
 import { ReservationService } from '../_service/reservation.service';
-import { BooksService } from '../_service/books.service';
 import { UsersService } from '../_service/users.service';
-import { UserAuthService } from '../_service/user-auth.service';
-import { TranslationService } from '../_service/translation.service';
+import { UserAuthService } from '../_service/user-auth.service';import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-reservation-container',
@@ -32,6 +31,8 @@ export class ReservationContainerComponent implements OnInit {
   formError: string | null = null;
   formSuccess: string | null = null;
   selectedBookId: number | null = null;
+  /** Nom d'un livre NON enregistré à réserver (backend : création à 0 exemplaire). */
+  newBookName: string | null = null;
   selectedUserId: number | null = null;
 
   // Recherche prédictive du livre (remplace le select)
@@ -52,9 +53,9 @@ export class ReservationContainerComponent implements OnInit {
 
   constructor(
     private reservationService: ReservationService,
-    private booksService: BooksService,
     private usersService: UsersService,
     private userAuthService: UserAuthService,
+    private route: ActivatedRoute,
     public t: TranslationService
   ) { }
 
@@ -72,6 +73,29 @@ export class ReservationContainerComponent implements OnInit {
     this.loadReservations();
     this.loadBooks();
     this.loadUsers();
+
+    // Arrivée depuis la modale « Détail du livre » : ?reserve=<bookId>
+    // ouvre directement le formulaire avec le livre pré-sélectionné.
+    this.route.queryParamMap.subscribe(params => {
+      const reserveId = params.get('reserve');
+      if (reserveId) {
+        this.pendingReserveId = Number(reserveId);
+        this.applyPendingReserve();
+      }
+    });
+  }
+
+  /** Id de livre à pré-sélectionner (venant de la modale détail du livre). */
+  private pendingReserveId: number | null = null;
+
+  /** Applique le pré-remplissage — après le chargement du catalogue si besoin. */
+  private applyPendingReserve() {
+    if (this.pendingReserveId === null) return;
+    const book = this.books.find(b => b.bookId === this.pendingReserveId);
+    if (!book) return; // catalogue pas encore chargé : réessayé après loadBooks
+    this.openCreateModal();
+    this.selectBookSuggestion(book);
+    this.pendingReserveId = null;
   }
 
   loadReservations() {
@@ -99,7 +123,7 @@ export class ReservationContainerComponent implements OnInit {
   }
 
   loadBooks() {
-    this.booksService.getBooksList().subscribe({
+    this.reservationService.getBooksCatalog().subscribe({
       next: (books) => {
         // On garde TOUS les livres : les indisponibles (0 exemplaire) sont
         // sélectionnables, les disponibles sont désactivés (RG-01).
@@ -107,6 +131,7 @@ export class ReservationContainerComponent implements OnInit {
         // avaient des exemplaires — semblait un échec de chargement.
         this.books = books;
         books.forEach(b => this.bookNames.set(b.bookId, b.bookName));
+        this.applyPendingReserve();
       },
       error: (err: HttpErrorResponse) => {
         if (err.status !== 0) {
@@ -122,15 +147,33 @@ export class ReservationContainerComponent implements OnInit {
   }
 
   /**
-   * Suggestions de la recherche prédictive : livres réservables (RG-01)
+   * Suggestions de la recherche prédictive — tous les livres du catalogue
    * dont le nom contient la requête (insensible à la casse/accents).
+   * Pourquoi tous : n'afficher que les 0 exemplaire donnait une liste vide
+   * (et un formulaire sans réaction) tant que tous les livres étaient en rayon.
+   * Les suggestions marquent quand même ce qui est réellement réservable.
    */
   get bookSuggestions(): Books[] {
     const q = this.normalize(this.bookQuery);
     if (!q) return [];
     return this.books
-      .filter(b => this.isBookReservable(b) && this.normalize(b.bookName).includes(q))
+      .filter(b => this.normalize(b.bookName).includes(q))
       .slice(0, 8);
+  }
+
+  /** Une option « créer ce livre » si la requête ne correspond à aucun titre. */
+  get canCreateNewBook(): boolean {
+    return !this.selectedBookId && !!this.bookQuery.trim();
+  }
+
+  /** Libellé de l'option « créer ce livre » (traduit, requête interpolée). */
+  get createNewLabel(): string {
+    return this.t.t('reservations.select.book.new').replace('{{ q }}', this.bookQuery.trim());
+  }
+
+  /** Aide contextuelle de l'option « créer ce livre ». */
+  get createNewHint(): string {
+    return this.t.t('reservations.select.book.new.hint');
   }
 
   /** Minuscules + sans accents, pour une recherche tolérante. */
@@ -146,29 +189,56 @@ export class ReservationContainerComponent implements OnInit {
     this.showBookSuggestions = true;
     this.highlightedIndex = -1;
     this.selectedBookId = null;
+    this.newBookName = null;
   }
 
   selectBookSuggestion(book: Books) {
     this.selectedBookId = book.bookId;
+    this.newBookName = null;
     this.bookQuery = book.bookName;
     this.showBookSuggestions = false;
     this.highlightedIndex = -1;
   }
 
+  /** Réserver un livre qui n'existe pas encore dans le catalogue. */
+  selectNewBook() {
+    this.selectedBookId = null;
+    this.newBookName = this.bookQuery.trim();
+    this.showBookSuggestions = false;
+    this.highlightedIndex = -1;
+  }
+
+  /** Pré-remplit le formulaire pour un livre donné (depuis la modale de détail). */
+  prefillForBook(book: Books) {
+    this.showDetailModal = false;
+    this.openCreateModal();
+    if (this.isBookReservable(book)) {
+      this.selectBookSuggestion(book);
+    } else {
+      this.bookQuery = book.bookName;
+      this.showBookSuggestions = true;
+    }
+  }
+
   onBookSearchKeydown(event: KeyboardEvent) {
     const suggestions = this.bookSuggestions;
+    // La dernière position « virtuelle » est l'option « créer ce livre »
+    const maxIndex = suggestions.length; // = index de l'option de création
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
         this.showBookSuggestions = true;
-        this.highlightedIndex = Math.min(this.highlightedIndex + 1, suggestions.length - 1);
+        this.highlightedIndex = Math.min(this.highlightedIndex + 1, maxIndex);
         break;
       case 'ArrowUp':
         event.preventDefault();
         this.highlightedIndex = Math.max(this.highlightedIndex - 1, -1);
         break;
       case 'Enter':
-        if (this.highlightedIndex >= 0 && suggestions[this.highlightedIndex]) {
+        if (this.highlightedIndex === suggestions.length) {
+          event.preventDefault();
+          this.selectNewBook();
+        } else if (this.highlightedIndex >= 0 && suggestions[this.highlightedIndex]) {
           event.preventDefault();
           this.selectBookSuggestion(suggestions[this.highlightedIndex]);
         }
@@ -272,6 +342,7 @@ export class ReservationContainerComponent implements OnInit {
 
   openCreateModal() {
     this.selectedBookId = null;
+    this.newBookName = null;
     this.selectedUserId = null;
     this.bookQuery = '';
     this.showBookSuggestions = false;
@@ -283,7 +354,9 @@ export class ReservationContainerComponent implements OnInit {
   }
 
   get isFormValid(): boolean {
-    if (this.selectedBookId === null) return false;
+    // Livre existant sélectionné OU nom de nouveau livre saisi
+    const bookOk = this.selectedBookId !== null || !!this.newBookName?.trim();
+    if (!bookOk) return false;
     // Un adhérent ne choisit pas l'adhérent : le backend impose son identité (RS-04)
     return this.isStaff ? this.selectedUserId !== null : true;
   }
@@ -295,7 +368,11 @@ export class ReservationContainerComponent implements OnInit {
     this.formSuccess = null;
 
     const reservation = new Reservation();
-    reservation.bookId = this.selectedBookId!;
+    if (this.selectedBookId !== null) {
+      reservation.bookId = this.selectedBookId;
+    } else {
+      reservation.newBookName = this.newBookName!.trim();
+    }
     if (this.isStaff) {
       reservation.userId = this.selectedUserId!;
     }

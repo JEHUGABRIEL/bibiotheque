@@ -102,6 +102,7 @@ export class ReservationDetailsComponent implements OnInit {
   /** Statut badge */
   getStatutLabel(statut: StatutReservation): string {
     const labels: Record<string, string> = {
+      'DEMANDE': 'Demande',
       'EN_ATTENTE': this.t.t('status.pending'),
       'DISPONIBLE': this.t.t('status.available'),
       'ANNULEE': this.t.t('status.cancelled'),
@@ -113,8 +114,9 @@ export class ReservationDetailsComponent implements OnInit {
 
   getStatutClass(statut: StatutReservation): string {
     const classes: Record<string, string> = {
-      'EN_ATTENTE': 'status-badge status-en-attente',
-      'DISPONIBLE': 'status-badge status-disponible',
+      'DEMANDE': 'status-badge status-en-attente',
+      'EN_ATTENTE': 'status-badge status-disponible',
+      'DISPONIBLE': 'status-badge status-honoree',
       'ANNULEE': 'status-badge status-annulee',
       'EXPIREE': 'status-badge status-expiree',
       'HONOREE': 'status-badge status-honoree'

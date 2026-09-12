@@ -4,6 +4,7 @@ import { NgForm } from '@angular/forms';
 import { Observable } from 'rxjs';
 import { Users } from '../_model/users';
 import { UserAuthService } from './user-auth.service';
+import { environment } from '../../environments/environment';
 
 /** Rôles « personnel » — accès complet à la gestion (biblio + rôle hérité Admin). */
 export const STAFF_ROLES = ['Admin', 'BIBLIOTHECAIRE'];
@@ -15,7 +16,7 @@ export const MEMBER_ROLES = ['User', 'ADHERENT'];
 })
 export class UsersService {
 
-  private baseURL = "http://localhost:8080/admin/users";
+  private baseURL = `${environment.apiUrl}/admin/users`;
   requestHeader = new HttpHeaders(
     { 'No-Auth': 'True' }
   );
@@ -26,7 +27,7 @@ export class UsersService {
   ) { }
 
   public login(loginData: NgForm) {
-    return this.httpClient.post("http://localhost:8080/authenticate", loginData, {
+    return this.httpClient.post(`${environment.apiUrl}/authenticate`, loginData, {
       headers: this.requestHeader,
     });
   }

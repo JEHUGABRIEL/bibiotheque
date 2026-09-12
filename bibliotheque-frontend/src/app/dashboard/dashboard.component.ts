@@ -8,12 +8,13 @@ import { BooksService } from '../_service/books.service';
 import { UsersService } from '../_service/users.service';
 import { BorrowService } from '../_service/borrow.service';
 import { ReservationService } from '../_service/reservation.service';
+import { UserAuthService } from '../_service/user-auth.service';
 import { TranslationService } from '../_service/translation.service';
 
 /** Stat clé du tableau de bord. */
 interface Stat {
   key: 'books' | 'users' | 'borrows' | 'reservations';
-  icon: string;      // chevron du dégradé (bleu/violet/vert/orange)
+  icon: string;
   value: number | null;
   detail: string;
 }
@@ -23,8 +24,8 @@ interface Segment {
   key: StatutReservation;
   count: number;
   color: string;
-  dash: number;   // longueur d'arc SVG
-  offset: number; // départ d'arc SVG
+  dash: number;
+  offset: number;
 }
 
 @Component({
@@ -37,32 +38,30 @@ export class DashboardComponent implements OnInit {
   loading = true;
   error: string | null = null;
 
+  // Staff-only data
   stats: Stat[] = [];
   segments: Segment[] = [];
-
-  /** Total affiché au centre du donut. */
-  get totalReservations(): number {
-    return this.segments.reduce((sum, s) => sum + s.count, 0);
-  }
-
   totalCopies = 0;
   activeBorrows = 0;
   overdueBorrows = 0;
   reservationPending = 0;
-
-  /** 7 derniers jours — réservations créées + emprunts (pour la courbe). */
   weekLabels: string[] = [];
   weekReservations: number[] = [];
   weekBorrows: number[] = [];
   weekMax = 4;
-
-  /** Top genres des livres (barres horizontales). */
   genres: { name: string; count: number; pct: number }[] = [];
-
-  /** Activité récente fusionnée, les 6 plus récents. */
   activity: { icon: string; label: string; detail: string; when: string; color: string }[] = [];
 
-  /** Liens des cartes de stats. */
+  // Member data
+  myBorrows: Borrow[] = [];
+  myReservations: Reservation[] = [];
+  bookNames = new Map<number, string>();
+  borrowQuota = { activeCount: 0, maxQuota: 3, remaining: 3 };
+
+  get totalReservations(): number {
+    return this.segments.reduce((sum, s) => sum + s.count, 0);
+  }
+
   readonly statLinks: Record<Stat['key'], string> = {
     books: '/books',
     users: '/users',
@@ -75,10 +74,18 @@ export class DashboardComponent implements OnInit {
     private usersService: UsersService,
     private borrowService: BorrowService,
     private reservationService: ReservationService,
+    private userAuthService: UserAuthService,
     public t: TranslationService
   ) { }
 
-  /** Actions rapides — les deux premières n'ont de sens que pour un Admin. */
+  get isStaff(): boolean {
+    return this.usersService.isStaff();
+  }
+
+  get userName(): string {
+    return this.userAuthService.getName() || '';
+  }
+
   get canManageBooks(): boolean {
     return this.usersService.roleMatch(['Admin']);
   }
@@ -88,14 +95,20 @@ export class DashboardComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadAll();
+    if (this.isStaff) {
+      this.loadStaffDashboard();
+    } else {
+      this.loadMemberDashboard();
+    }
   }
 
   onRetry(): void {
-    this.loadAll();
+    this.ngOnInit();
   }
 
-  private loadAll(): void {
+  // ==================== STAFF DASHBOARD ====================
+
+  private loadStaffDashboard(): void {
     this.loading = true;
     this.error = null;
 
@@ -105,7 +118,7 @@ export class DashboardComponent implements OnInit {
       borrows: this.borrowService.getBorrowList(),
       reservations: this.reservationService.getAll()
     }).subscribe({
-      next: (data) => this.build(data.books, data.users, data.borrows, data.reservations),
+      next: (data) => this.buildStaffDashboard(data.books, data.users, data.borrows, data.reservations),
       error: (err) => {
         this.loading = false;
         this.error = (err?.status === 0)
@@ -115,8 +128,7 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  private build(books: Books[], users: Users[], borrows: Borrow[], reservations: Reservation[]): void {
-    // ---- Cartes de stats ----
+  private buildStaffDashboard(books: Books[], users: Users[], borrows: Borrow[], reservations: Reservation[]): void {
     const totalCopies = books.reduce((sum, b) => sum + (b.noOfCopies ?? 0), 0);
     const now = Date.now();
     const activeBorrows = borrows.filter(b => !b.returnDate).length;
@@ -135,23 +147,124 @@ export class DashboardComponent implements OnInit {
       { key: 'reservations',  icon: 'linear-gradient(135deg, #f5a623, #f7c948)',  value: reservations.length, detail: pending + ' en attente' },
     ];
 
-    // ---- Donut réservations par statut ----
     this.segments = this.buildSegments(reservations);
-
-    // ---- Courbe 7 jours ----
     this.buildWeek(borrows, reservations);
-
-    // ---- Genres ----
     this.genres = this.buildGenres(books);
-
-    // ---- Activité récente ----
     this.buildActivity(books, users, borrows, reservations);
 
     this.loading = false;
   }
 
+  // ==================== MEMBER DASHBOARD ====================
+
+  private loadMemberDashboard(): void {
+    this.loading = true;
+    this.error = null;
+
+    const userId = this.userAuthService.getUserId();
+    if (!userId) {
+      this.loading = false;
+      this.error = 'Utilisateur non identifié.';
+      return;
+    }
+
+    // Load books and borrows independently — reservations may fail for User role
+    let booksLoaded = false;
+    let borrowsLoaded = false;
+
+    const checkDone = () => {
+      if (booksLoaded && borrowsLoaded) {
+        this.loading = false;
+      }
+    };
+
+    this.booksService.getBooksList().subscribe({
+      next: (books) => {
+        books.forEach(b => this.bookNames.set(b.bookId, b.bookName));
+        booksLoaded = true;
+        checkDone();
+      },
+      error: () => { booksLoaded = true; checkDone(); }
+    });
+
+    this.borrowService.getBooksBorrowedByUser(userId).subscribe({
+      next: (borrows) => {
+        this.myBorrows = borrows;
+        borrowsLoaded = true;
+        checkDone();
+      },
+      error: () => { borrowsLoaded = true; checkDone(); }
+    });
+
+    // Load borrow quota
+    this.borrowService.getMyQuota().subscribe({
+      next: (quota) => { this.borrowQuota = quota; },
+      error: () => {}
+    });
+
+    // Reservations: load if user has ADHERENT or User role
+    if (this.usersService.roleMatch(['ADHERENT', 'User'])) {
+      this.reservationService.getAll().subscribe({
+        next: (reservations) => {
+          this.myReservations = reservations.filter(r => r.userId === userId);
+        },
+        error: () => { /* ignore — show empty reservations */ }
+      });
+    }
+  }
+
+  getBookName(bookId: number): string {
+    return this.bookNames.get(bookId) || 'Livre #' + bookId;
+  }
+
+  getStatutClassBorrow(statut: string): string {
+    const classes: Record<string, string> = {
+      'EN_ATTENTE': 'status-badge status-en-attente',
+      'VALIDEE': 'status-badge status-disponible',
+      'REFUSEE': 'status-badge status-expiree',
+      'EN_COURS': 'status-badge status-en-attente',
+      'RENDU': 'status-badge status-honoree'
+    };
+    return classes[statut] || 'status-badge';
+  }
+
+  getStatutLabelBorrow(statut: string): string {
+    const labels: Record<string, string> = {
+      'EN_ATTENTE': 'En attente',
+      'VALIDEE': 'Validé',
+      'REFUSEE': 'Refusé',
+      'EN_COURS': 'En cours',
+      'RENDU': 'Rendu'
+    };
+    return labels[statut] || statut;
+  }
+
+  getStatutClass(statut: StatutReservation): string {
+    const classes: Record<string, string> = {
+      'EN_ATTENTE': 'status-badge status-en-attente',
+      'DISPONIBLE': 'status-badge status-disponible',
+      'ANNULEE': 'status-badge status-annulee',
+      'EXPIREE': 'status-badge status-expiree',
+      'HONOREE': 'status-badge status-honoree'
+    };
+    return classes[statut] || 'status-badge status-annulee';
+  }
+
+  get activeBorrowCount(): number {
+    return this.myBorrows.filter(b => !b.returnDate).length;
+  }
+
+  get activeReservationCount(): number {
+    return this.myReservations.filter(r =>
+      r.statut === StatutReservation.EN_ATTENTE || r.statut === StatutReservation.DISPONIBLE
+    ).length;
+  }
+
+  // ==================== SHARED HELPERS ====================
+
   private buildSegments(reservations: Reservation[]): Segment[] {
     const colors: Record<StatutReservation, string> = {
+      [StatutReservation.DEMANDE]:      '#e67e22',
       [StatutReservation.EN_ATTENTE]: '#f5a623',
       [StatutReservation.DISPONIBLE]: '#4f6df5',
       [StatutReservation.HONOREE]:    '#2fbf71',
@@ -167,8 +280,8 @@ export class DashboardComponent implements OnInit {
     let offset = 0;
     const segments: Segment[] = [];
     for (const key of [
-      StatutReservation.EN_ATTENTE, StatutReservation.DISPONIBLE, StatutReservation.HONOREE,
-      StatutReservation.ANNULEE, StatutReservation.EXPIREE
+      StatutReservation.DEMANDE, StatutReservation.EN_ATTENTE, StatutReservation.DISPONIBLE,
+      StatutReservation.HONOREE, StatutReservation.ANNULEE, StatutReservation.EXPIREE
     ]) {
       const count = counts.get(key) ?? 0;
       if (count === 0) { continue; }
@@ -267,7 +380,6 @@ export class DashboardComponent implements OnInit {
     return date.toLocaleDateString('fr-FR');
   }
 
-  /** Barres de la courbe — hauteur en % pour le style inline. */
   barHeight(values: number[], i: number): number {
     return Math.round((values[i] / this.weekMax) * 100);
   }
@@ -295,6 +407,7 @@ function inDay(value: Date | string | undefined | null, start: Date, end: Date):
 
 function statusKey(statut: StatutReservation): string {
   switch (statut) {
+    case StatutReservation.DEMANDE:     return 'status.demand';
     case StatutReservation.EN_ATTENTE: return 'status.pending';
     case StatutReservation.DISPONIBLE: return 'status.available';
     case StatutReservation.ANNULEE:    return 'status.cancelled';

@@ -4,7 +4,10 @@ import { Books } from '../_model/books'
 import { BooksService } from '../_service/books.service';
 import { UsersService } from '../_service/users.service';
 import { TranslationService } from '../_service/translation.service';
+import { ToastService } from '../_service/toast.service';
+import { BorrowService } from '../_service/borrow.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Borrow } from '../_model/borrow';
 
 @Component({
   selector: 'app-books-list',
@@ -53,17 +56,15 @@ export class BooksListComponent implements OnInit {
   // Create form
   newBook: Books = new Books();
   createLoading = false;
-  createError: string | null = null;
-  createSuccess: string | null = null;
 
   // Edit form
   editLoading = false;
-  editError: string | null = null;
-  editSuccess: string | null = null;
 
   // Delete confirmation
   showDeleteConfirm = false;
   bookToDelete: Books | null = null;
+  deleteBookBorrows: Borrow[] = [];
+  deleteInputValue = '';
 
   // Details modal
   showDetailModal = false;
@@ -71,15 +72,14 @@ export class BooksListComponent implements OnInit {
   detailError: string | null = null;
   detailBook: Books | null = null;
 
-  get deleteMessage(): string {
-    if (!this.bookToDelete) return '';
-    return 'Voulez-vous vraiment supprimer \u00AB ' + this.bookToDelete.bookName + ' \u00BB ? Cette action est irréversible.';
-  }
-
-  constructor(private booksService: BooksService,
+  constructor(
+    private booksService: BooksService,
     private usersService: UsersService,
+    private borrowService: BorrowService,
     private router: Router,
-    public t: TranslationService) { }
+    public t: TranslationService,
+    private toast: ToastService
+  ) { }
 
   /** Le personnel peut modifier un livre depuis la modale de détail. */
   get isStaff(): boolean {
@@ -109,23 +109,57 @@ export class BooksListComponent implements OnInit {
 
   openDeleteConfirm(book: Books) {
     this.bookToDelete = book;
+    this.deleteInputValue = '';
+    this.deleteBookBorrows = [];
     this.showDeleteConfirm = true;
+
+    // Vérifier les emprunts actifs pour ce livre
+    this.borrowService.getBookBorrowHistory(book.bookId).subscribe({
+      next: (borrows) => {
+        this.deleteBookBorrows = borrows.filter(b => !b.returnDate);
+      },
+      error: () => {}
+    });
+  }
+
+  get deleteMessage(): string {
+    if (!this.bookToDelete) return '';
+    const activeBorrows = this.deleteBookBorrows.length;
+    if (activeBorrows > 0) {
+      return `<strong>Attention : ce livre est actuellement emprunté (${activeBorrows} emprunt${activeBorrows > 1 ? 's' : ''} en cours).</strong><br><br>Voulez-vous vraiment supprimer « ${this.bookToDelete.bookName} » ? Cette action est irréversible.<br><br><em>Tapez le nom exact du livre pour confirmer :</em>`;
+    }
+    return `Voulez-vous vraiment supprimer « ${this.bookToDelete.bookName} » ? Cette action est irréversible.<br><br><em>Tapez le nom exact du livre pour confirmer :</em>`;
+  }
+
+  get isDeleteInputValid(): boolean {
+    return this.deleteInputValue.trim() === this.bookToDelete?.bookName;
   }
 
   confirmDelete() {
-    if (!this.bookToDelete) return;
+    if (!this.bookToDelete || !this.isDeleteInputValid) return;
     const bookId = this.bookToDelete.bookId;
+    const bookName = this.bookToDelete.bookName;
     this.showDeleteConfirm = false;
     this.bookToDelete = null;
+    this.deleteBookBorrows = [];
+    this.deleteInputValue = '';
     this.booksService.deleteBook(bookId).subscribe({
-      next: () => this.getBooks(),
-      error: () => this.getBooks()
+      next: () => {
+        this.toast.success('Livre « ' + bookName + ' » supprimé avec succès');
+        this.getBooks();
+      },
+      error: (err: HttpErrorResponse) => {
+        this.toast.error(err.error?.message || 'Erreur lors de la suppression');
+        this.getBooks();
+      }
     });
   }
 
   cancelDelete() {
     this.showDeleteConfirm = false;
     this.bookToDelete = null;
+    this.deleteBookBorrows = [];
+    this.deleteInputValue = '';
   }
 
   /** Détails en modale — plus de navigation vers une page séparée. */
@@ -168,8 +202,6 @@ export class BooksListComponent implements OnInit {
   // --- Create modal ---
   openCreateModal() {
     this.newBook = new Books();
-    this.createError = null;
-    this.createSuccess = null;
     this.showCreateModal = true;
   }
 
@@ -184,21 +216,16 @@ export class BooksListComponent implements OnInit {
 
   submitCreate() {
     this.createLoading = true;
-    this.createError = null;
-    this.createSuccess = null;
     this.booksService.createBook(this.newBook).subscribe({
       next: () => {
         this.createLoading = false;
-        this.createSuccess = 'Livre ajouté avec succès';
+        this.toast.success('Livre ajouté avec succès');
         this.getBooks();
-        setTimeout(() => {
-          this.showCreateModal = false;
-          this.createSuccess = null;
-        }, 1200);
+        this.showCreateModal = false;
       },
       error: (err: HttpErrorResponse) => {
         this.createLoading = false;
-        this.createError = err.error?.message || 'Erreur lors de l\'ajout';
+        this.toast.error(err.error?.message || 'Erreur lors de l\'ajout');
       }
     });
   }
@@ -207,8 +234,6 @@ export class BooksListComponent implements OnInit {
   openEditModal(book: Books) {
     this.editBook = { ...book };
     this.editBookId = book.bookId;
-    this.editError = null;
-    this.editSuccess = null;
     this.showEditModal = true;
   }
 
@@ -223,21 +248,16 @@ export class BooksListComponent implements OnInit {
 
   submitEdit() {
     this.editLoading = true;
-    this.editError = null;
-    this.editSuccess = null;
     this.booksService.updateBook(this.editBookId, this.editBook).subscribe({
       next: () => {
         this.editLoading = false;
-        this.editSuccess = 'Livre modifié avec succès';
+        this.toast.success('Livre modifié avec succès');
         this.getBooks();
-        setTimeout(() => {
-          this.showEditModal = false;
-          this.editSuccess = null;
-        }, 1200);
+        this.showEditModal = false;
       },
       error: (err: HttpErrorResponse) => {
         this.editLoading = false;
-        this.editError = err.error?.message || 'Erreur lors de la modification';
+        this.toast.error(err.error?.message || 'Erreur lors de la modification');
       }
     });
   }

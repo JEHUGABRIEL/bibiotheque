@@ -1,0 +1,133 @@
+<div class="page-header">
+  <div class="page-header-icon" style="background: linear-gradient(135deg, #5b4cd4, #7c4dff);">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm3.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+    </svg>
+  </div>
+  <div>
+    <h2>Demandes d'emprunt</h2>
+    <p>Demandes envoyées par les adhérents, en attente de traitement</p>
+  </div>
+</div>
+
+<div class="table-actions-bar">
+  <button class="btn-action btn-action-outline" (click)="goBack()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8"/>
+    </svg>
+    Retour aux emprunts
+  </button>
+  <div style="flex: 1;"></div>
+</div>
+
+<!-- Chargement -->
+<div *ngIf="loading" class="loading-state">
+  <div class="spinner"></div>
+  <p>{{ t.t('loading.text') }}</p>
+</div>
+
+<!-- Tableau des demandes en attente -->
+<div *ngIf="!loading && pendingRequests.length > 0" class="pending-section">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Adhérent</th>
+          <th>Livre</th>
+          <th>Date de demande</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let req of paginatedRequests">
+          <td><strong>{{ getUserName(req.userId) }}</strong></td>
+          <td>{{ getBookNameFor(req.bookId) }}</td>
+          <td>{{ req.issueDate ? (req.issueDate | date:'dd/MM/yyyy HH:mm') : '—' }}</td>
+          <td class="actions-cell">
+            <button (click)="openValidateConfirm(req)" class="action-btn action-btn-success" title="Valider">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+              </svg>
+            </button>
+            <button (click)="openRefuseConfirm(req)" class="action-btn action-btn-danger" title="Refuser">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </button>
+            <button (click)="openDetails(req)" class="action-btn action-btn-primary" title="Voir les détails">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.133 13.133 0 0 1 1.172 8"/>
+                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div class="table-footer">
+    <div class="pagination">
+      <button class="nav-btn" (click)="goToPage(page - 1)" [disabled]="page === 1">{{ t.t('pagination.prev') }}</button>
+      <button *ngFor="let p of pageNumbers" class="page-btn" (click)="goToPage(p)" [class.active]="p === page">{{ p }}</button>
+      <button class="nav-btn" (click)="goToPage(page + 1)" [disabled]="page === totalPages">{{ t.t('pagination.next') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vide -->
+<div *ngIf="!loading && pendingRequests.length === 0" class="empty-state">
+  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.3;">
+    <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm3.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+  </svg>
+  <h3>Aucune demande en attente</h3>
+  <p>Toutes les demandes d'emprunt ont été traitées.</p>
+</div>
+
+<!-- Modal de confirmation générique (valider / refuser) -->
+<app-confirm-modal
+  [open]="showConfirmModal"
+  [title]="confirmTitle"
+  [message]="confirmMessage"
+  [confirmLabel]="confirmLabel"
+  [cancelLabel]="t.t('btn.cancel')"
+  [danger]="confirmDanger"
+  [iconBg]="confirmIconBg"
+  (confirm)="onConfirmModalConfirm()"
+  (cancel)="onConfirmModalClose()">
+</app-confirm-modal>
+
+<!-- Modal: Détails de la demande -->
+<app-modal [open]="showDetailModal" title="Détails de la demande" iconColor="linear-gradient(135deg, #5b4cd4, #7c4dff)" (close)="closeDetails()">
+  <div *ngIf="detailBorrow" class="detail-grid">
+    <div class="detail-row">
+      <span class="detail-label">Adhérent</span>
+      <span class="detail-value"><strong>{{ getUserName(detailBorrow.userId) }}</strong></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Livre</span>
+      <span class="detail-value"><strong>{{ getBookNameFor(detailBorrow.bookId) }}</strong></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Date de demande</span>
+      <span class="detail-value">{{ detailBorrow.issueDate ? (detailBorrow.issueDate | date:'dd/MM/yyyy HH:mm') : '—' }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Statut</span>
+      <span class="detail-value"><span [class]="getStatutClass(detailBorrow.statut)">{{ getStatutLabel(detailBorrow.statut) }}</span></span>
+    </div>
+  </div>
+
+  <div class="form-actions" *ngIf="detailBorrow">
+    <button type="button" class="btn-action btn-action-outline" (click)="closeDetails()">{{ t.t('btn.close') }}</button>
+    <button type="button" class="btn-action btn-action-success"
+            (click)="closeDetails(); openValidateConfirm(detailBorrow)">
+      Valider
+    </button>
+    <button type="button" class="btn-action btn-action-danger"
+            (click)="closeDetails(); openRefuseConfirm(detailBorrow)">
+      Refuser
+    </button>
+  </div>
+</app-modal>

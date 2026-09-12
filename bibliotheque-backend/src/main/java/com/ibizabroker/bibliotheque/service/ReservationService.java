@@ -37,6 +37,11 @@ public class ReservationService {
     // jamais du corps de la requête.
     // ------------------------------------------------------------------
 
+    private Users user(Integer userId) {
+        return usersRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("Adhérent avec l'id " + userId + " introuvable"));
+    }
+
     private Users resolveUser(String username) {
         return usersRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("Utilisateur '" + username + "' introuvable"));
@@ -44,7 +49,8 @@ public class ReservationService {
 
     private boolean isBibliothecaire(Users user) {
         // L'ancien rôle 'Admin' (séances précédentes) donne aussi les droits staff
-        return user.getRole().stream()
+        // (null-safe : un compte sans rôle n'est pas du personnel)
+        return user.getRole() != null && user.getRole().stream()
                 .anyMatch(r -> ROLE_BIBLIOTHECAIRE.equals(r.getRoleName())
                         || ROLE_ADMIN.equals(r.getRoleName()));
     }
@@ -105,6 +111,29 @@ public class ReservationService {
     }
 
     // ------------------------------------------------------------------
+    // Workflow DEMANDE → EN_ATTENTE (acceptation par le personnel)
+    // ------------------------------------------------------------------
+
+    /**
+     * Le personnel accepte une DEMANDE de réservation : elle devient une
+     * réservation EN_ATTENTE (l'exemplaire sera décompté à la remise du livre).
+     */
+    public Reservation accepter(Long id, String username) {
+        Users staff = resolveUser(username);
+        if (!isBibliothecaire(staff)) {
+            throw new ForbiddenException("Seul le personnel peut accepter une demande de réservation");
+        }
+        Reservation reservation = getExisting(id);
+        if (reservation.getStatut() != StatutReservation.DEMANDE) {
+            throw new ConflictException(
+                "Impossible d'accepter une réservation avec le statut \"" + reservation.getStatut() + "\". " +
+                "Seules les demandes (DEMANDE) peuvent être acceptées.");
+        }
+        reservation.setStatut(StatutReservation.EN_ATTENTE);
+        return reservationRepository.save(reservation);
+    }
+
+    // ------------------------------------------------------------------
     // Règles métier (inchangées — séance précédente)
     // ------------------------------------------------------------------
 
@@ -159,20 +188,24 @@ public class ReservationService {
                 .orElseThrow(() -> new NotFoundException("Adhérent avec l'id " + userId + " introuvable"));
 
         // Vérifier qu'aucune réservation active n'existe déjà pour ce livre
+        // (une DEMANDE compte comme active : pas de doublon demande/réservation)
         boolean hasActive = reservationRepository.existsByBookIdAndStatutIn(
-                bookId, List.of(StatutReservation.EN_ATTENTE, StatutReservation.DISPONIBLE));
+                bookId, STATUTS_ACTIFS);
         if (hasActive) {
             throw new ConflictException("Une réservation active existe déjà pour ce livre");
         }
 
-        // RG-03 : quota de 3 réservations actives
+        // RG-03 : quota de 3 réservations actives (demandes incluses)
         long activeCount = reservationRepository.countByUserIdAndStatutIn(
-                userId, List.of(StatutReservation.EN_ATTENTE, StatutReservation.DISPONIBLE));
+                userId, STATUTS_ACTIFS);
         if (activeCount >= QUOTA_MAX) {
             throw new ConflictException("Quota de " + QUOTA_MAX + " réservations actives atteint pour cet adhérent");
         }
 
-        reservation.setStatut(StatutReservation.EN_ATTENTE);
+        // L'adhérent soumet une DEMANDE (à accepter par le personnel) ;
+        // le personnel crée directement une réservation EN_ATTENTE.
+        reservation.setStatut(isBibliothecaire(user(reservation.getUserId()))
+                ? StatutReservation.EN_ATTENTE : StatutReservation.DEMANDE);
         reservation.setDateReservation(new Date());
 
         Calendar cal = Calendar.getInstance();
@@ -183,6 +216,10 @@ public class ReservationService {
         return reservationRepository.save(reservation);
     }
 
+    /** Réservations « vivantes » : demandes + réservations en attente/disponibles. */
+    private static final List<StatutReservation> STATUTS_ACTIFS =
+            List.of(StatutReservation.DEMANDE, StatutReservation.EN_ATTENTE, StatutReservation.DISPONIBLE);
+
     public Reservation cancel(Long id) {
         if (id == null) {
             throw new BadRequestException("L'identifiant de la réservation est requis");
@@ -191,10 +228,10 @@ public class ReservationService {
         Reservation reservation = getExisting(id);
 
         StatutReservation statut = reservation.getStatut();
-        if (statut != StatutReservation.EN_ATTENTE && statut != StatutReservation.DISPONIBLE) {
+        if (statut != StatutReservation.DEMANDE && statut != StatutReservation.EN_ATTENTE && statut != StatutReservation.DISPONIBLE) {
             throw new ConflictException(
                     "Impossible d'annuler une réservation avec le statut \"" + statut + "\". " +
-                    "Seules les réservations EN_ATTENTE ou DISPONIBLE peuvent être annulées.");
+                    "Seules les demandes (DEMANDE) et réservations EN_ATTENTE ou DISPONIBLE peuvent être annulées.");
         }
 
         reservation.setStatut(StatutReservation.ANNULEE);

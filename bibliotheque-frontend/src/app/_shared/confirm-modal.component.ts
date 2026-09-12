@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
 
 @Component({
   selector: 'app-confirm-modal',
@@ -12,12 +12,22 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
           </svg>
         </div>
         <h3>{{ title }}</h3>
-        <p>{{ message }}</p>
+        <p [innerHTML]="message"></p>
+        <div *ngIf="requireInput" class="confirm-input-group">
+          <label>{{ inputLabel }}</label>
+          <input type="text" class="confirm-input" [placeholder]="inputPlaceholder"
+                 [value]="inputValue" (input)="onInput($event)">
+          <p *ngIf="inputValue && inputValue !== requiredValue" class="confirm-input-error">
+            Le texte ne correspond pas
+          </p>
+        </div>
         <div class="confirm-actions">
           <button class="confirm-btn confirm-cancel" (click)="cancel.emit()">
             {{ cancelLabel }}
           </button>
-          <button class="confirm-btn confirm-ok" [class.confirm-danger]="danger" (click)="confirm.emit()">
+          <button class="confirm-btn confirm-ok" [class.confirm-danger]="danger"
+                  [disabled]="requireInput && inputValue !== requiredValue"
+                  (click)="onConfirm()">
             {{ confirmLabel }}
           </button>
         </div>
@@ -82,8 +92,44 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     p {
       font-size: 0.88rem;
       color: var(--text-secondary, #8b8fa3);
-      margin: 0 0 1.5rem;
+      margin: 0 0 1rem;
       line-height: 1.5;
+    }
+
+    .confirm-input-group {
+      margin-bottom: 1rem;
+      text-align: left;
+    }
+
+    .confirm-input-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-secondary, #8b8fa3);
+      margin-bottom: 0.4rem;
+    }
+
+    .confirm-input {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      background: var(--bg-input, #1a1d27);
+      border: 1px solid var(--border-color, #2d3143);
+      border-radius: 8px;
+      color: var(--text-primary, #e8e9ed);
+      font-size: 0.88rem;
+      outline: none;
+      transition: border-color 0.15s;
+      box-sizing: border-box;
+    }
+
+    .confirm-input:focus {
+      border-color: #7c4dff;
+    }
+
+    .confirm-input-error {
+      color: #dc3545;
+      font-size: 0.75rem;
+      margin: 0.35rem 0 0;
     }
 
     .confirm-actions {
@@ -103,13 +149,18 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       transition: all 0.15s;
     }
 
+    .confirm-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
     .confirm-cancel {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid var(--border-color, #2d3143);
       color: var(--text-secondary, #8b8fa3);
     }
 
-    .confirm-cancel:hover {
+    .confirm-cancel:hover:not(:disabled) {
       background: rgba(255, 255, 255, 0.08);
       color: var(--text-primary, #e8e9ed);
     }
@@ -119,7 +170,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       color: #fff;
     }
 
-    .confirm-ok:hover {
+    .confirm-ok:hover:not(:disabled) {
       opacity: 0.9;
     }
 
@@ -127,7 +178,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
       background: #dc3545;
     }
 
-    .confirm-danger:hover {
+    .confirm-danger:hover:not(:disabled) {
       background: #c82333;
     }
 
@@ -146,7 +197,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
     }
   `]
 })
-export class ConfirmModalComponent {
+export class ConfirmModalComponent implements OnChanges {
   @Input() open = false;
   @Input() title = 'Confirmation';
   @Input() message = 'Êtes-vous sûr ?';
@@ -154,8 +205,28 @@ export class ConfirmModalComponent {
   @Input() cancelLabel = 'Annuler';
   @Input() danger = false;
   @Input() iconBg = 'linear-gradient(135deg, #7c4dff, #5b4cd4)';
+  @Input() requireInput = false;
+  @Input() requiredValue = '';
+  @Input() inputLabel = '';
+  @Input() inputPlaceholder = '';
   @Output() confirm = new EventEmitter<void>();
   @Output() cancel = new EventEmitter<void>();
+
+  inputValue = '';
+
+  ngOnChanges() {
+    if (this.open) {
+      this.inputValue = '';
+    }
+  }
+
+  onInput(event: Event) {
+    this.inputValue = (event.target as HTMLInputElement).value;
+  }
+
+  onConfirm() {
+    this.confirm.emit();
+  }
 
   onOverlayClick(event: Event) {
     if ((event.target as HTMLElement).classList.contains('modal-overlay')) {

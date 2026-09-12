@@ -24,6 +24,8 @@ export class ReservationListComponent {
   @Output() retryRequest = new EventEmitter<void>();
   @Output() createRequest = new EventEmitter<void>();
   @Output() openDetails = new EventEmitter<Reservation>();
+  /** Le personnel accepte une DEMANDE → EN_ATTENTE. */
+  @Output() acceptRequest = new EventEmitter<Reservation>();
 
   selectedFilter: StatutReservation | null = null;
   statuts = Object.values(StatutReservation);
@@ -69,6 +71,10 @@ export class ReservationListComponent {
     this.cancelRequest.emit(reservation);
   }
 
+  onAccept(reservation: Reservation) {
+    this.acceptRequest.emit(reservation);
+  }
+
   onOpen(reservation: Reservation) {
     this.openDetails.emit(reservation);
   }
@@ -83,6 +89,7 @@ export class ReservationListComponent {
 
   getStatutLabel(statut: StatutReservation): string {
     const labels: Record<string, string> = {
+      'DEMANDE': 'Demande',
       'EN_ATTENTE': this.t.t('status.pending'),
       'DISPONIBLE': this.t.t('status.available'),
       'ANNULEE': this.t.t('status.cancelled'),
@@ -94,7 +101,8 @@ export class ReservationListComponent {
 
   getStatutClass(statut: StatutReservation): string {
     const classes: Record<string, string> = {
-      'EN_ATTENTE': 'badge bg-warning text-dark',
+      'DEMANDE': 'badge bg-warning text-dark',
+      'EN_ATTENTE': 'badge bg-info',
       'DISPONIBLE': 'badge bg-success',
       'ANNULEE': 'badge bg-secondary',
       'EXPIREE': 'badge bg-danger',
@@ -103,8 +111,15 @@ export class ReservationListComponent {
     return classes[statut] || 'badge bg-secondary';
   }
 
+  /** Une DEMANDE est acceptée par le personnel uniquement. */
+  canAccept(r: Reservation): boolean {
+    return this.isStaff && r.statut === StatutReservation.DEMANDE;
+  }
+
   canCancel(r: Reservation): boolean {
-    const statutOk = r.statut === StatutReservation.EN_ATTENTE || r.statut === StatutReservation.DISPONIBLE;
+    const statutOk = r.statut === StatutReservation.DEMANDE
+      || r.statut === StatutReservation.EN_ATTENTE
+      || r.statut === StatutReservation.DISPONIBLE;
     // Droit : personnel, ou réservation qui m'appartient (miroir UI de la règle RS-03 backend)
     return statutOk && (this.isStaff || r.userId === this.currentUserId);
   }

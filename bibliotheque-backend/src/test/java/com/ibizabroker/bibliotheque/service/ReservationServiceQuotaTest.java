@@ -76,8 +76,8 @@ class ReservationServiceQuotaTest {
         // when
         Reservation creee = reservationService.create(demande);
 
-        // then — la 3e réservation est acceptée et mise en attente
-        assertThat(creee.getStatut()).isEqualTo(StatutReservation.EN_ATTENTE);
+        // then — la 3e réservation est acceptée : l'adhérent crée une DEMANDE
+        assertThat(creee.getStatut()).isEqualTo(StatutReservation.DEMANDE);
         verify(reservationRepository).save(any(Reservation.class));
     }
 
@@ -120,11 +120,11 @@ class ReservationServiceQuotaTest {
         // when
         reservationService.create(demande);
 
-        // then — les statuts actifs interrogés sont bien EN_ATTENTE + DISPONIBLE
+        // then — les statuts actifs interrogés sont bien DEMANDE + EN_ATTENTE + DISPONIBLE
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<StatutReservation>> statuts = ArgumentCaptor.forClass(List.class);
         verify(reservationRepository).countByUserIdAndStatutIn(eq(USER_ID), statuts.capture());
         assertThat(statuts.getValue())
-                .containsExactlyInAnyOrder(StatutReservation.EN_ATTENTE, StatutReservation.DISPONIBLE);
+                .containsExactlyInAnyOrder(StatutReservation.DEMANDE, StatutReservation.EN_ATTENTE, StatutReservation.DISPONIBLE);
     }
 }

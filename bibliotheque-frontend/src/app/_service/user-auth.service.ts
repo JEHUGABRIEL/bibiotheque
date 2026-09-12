@@ -39,8 +39,16 @@ export class UserAuthService {
     return JSON.parse(localStorage.getItem('name')!);
   }
 
+  /**
+   * Nettoie UNIQUEMENT les clés de session — et pas tout le localStorage.
+   * localStorage.clear() effacerait aussi les préférences (theme, lang) et
+   * l'état de lecture des notifications, qui doivent survivre à la déconnexion.
+   */
   public clear() {
-    localStorage.clear();
+    localStorage.removeItem('roles');
+    localStorage.removeItem('jwtToken');
+    localStorage.removeItem('userId');
+    localStorage.removeItem('name');
   }
 
   public isLoggedIn() {

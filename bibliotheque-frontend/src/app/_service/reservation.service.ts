@@ -4,13 +4,14 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Reservation, StatutReservation } from '../_model/reservation';
 import { Books } from '../_model/books';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ReservationService {
 
-  private baseURL = 'http://localhost:8080/api/reservations';
+  private baseURL = `${environment.apiUrl}/api/reservations`;
 
   constructor(private httpClient: HttpClient) { }
 
@@ -35,7 +36,7 @@ export class ReservationService {
    * compte authentifié.
    */
   getBooksCatalog(): Observable<Books[]> {
-    return this.httpClient.get<Books[]>('http://localhost:8080/admin/books');
+    return this.httpClient.get<Books[]>(`${environment.apiUrl}/admin/books`);
   }
 
   create(reservation: Reservation): Observable<Reservation> {
@@ -44,5 +45,10 @@ export class ReservationService {
 
   annuler(id: number): Observable<Reservation> {
     return this.httpClient.patch<Reservation>(`${this.baseURL}/${id}/annuler`, {});
+  }
+
+  /** Le personnel accepte une DEMANDE de réservation → EN_ATTENTE. */
+  accepter(id: number): Observable<Reservation> {
+    return this.httpClient.patch<Reservation>(`${this.baseURL}/${id}/accepter`, {});
   }
 }

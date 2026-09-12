@@ -6,76 +6,289 @@
   </div>
   <div>
     <h2>{{ t.t('borrow.title') }}</h2>
-    <p>{{ t.t('borrow.subtitle') }}</p>
+    <p>{{ isStaff ? t.t('borrow.subtitle') : 'Soumettre une demande d\'emprunt' }}</p>
   </div>
 </div>
 
-<!-- Messages -->
-<div *ngIf="errorMessage" class="form-message form-error" style="max-width: 600px;">
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-    <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
-  </svg>
-  {{ errorMessage }}
-</div>
-<div *ngIf="successMessage" class="form-message form-success" style="max-width: 600px;">
-  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-    <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
-  </svg>
-  {{ successMessage }}
+<!-- Quota info (Adhérent only) -->
+<div *ngIf="!isStaff && !loading" class="quota-banner" [class.quota-full]="quotaReached">
+  <div class="quota-info">
+    <span class="quota-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+        <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492z"/>
+      </svg>
+    </span>
+    <span class="quota-text">
+      Emprunts : <strong>{{ activeBorrowCount }} / {{ maxQuota }}</strong>
+      <span *ngIf="remainingQuota > 0" class="quota-remaining"> — {{ remainingQuota }} place(s) restante(s)</span>
+      <span *ngIf="quotaReached" class="quota-full-text"> — Quota atteint</span>
+    </span>
+  </div>
 </div>
 
-<!-- Loading -->
+<!-- Actions au-dessus du tableau : filtre + boutons sur la même ligne -->
+<div class="table-actions-bar">
+  <select *ngIf="isAdmin && allBorrows.length > 0" class="form-control statut-filter"
+          [ngModel]="statutFilter" (ngModelChange)="statutFilter = $event; onStatutFilterChange()" name="statutFilter">
+    <option [ngValue]="null">Tous les emprunts</option>
+    <option *ngFor="let s of statuts" [ngValue]="s">{{ getStatutLabel(s) }}</option>
+  </select>
+  <div style="flex: 1;"></div>
+  <button class="btn-action btn-action-outline" *ngIf="isStaff" (click)="goToPendingBorrows()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm3.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+    </svg>
+    Voir toutes les demandes d'emprunt
+  </button>
+  <button class="btn-action btn-action-primary" (click)="openBorrowModal()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+    </svg>
+    Nouvel emprunt
+  </button>
+</div>
+
+<!-- Tableau unique des emprunts (Admin) : demandes + emprunts, toutes actions -->
+<div *ngIf="isAdmin && usersReady && filteredBorrows.length > 0" class="pending-section">
+  <div class="table-responsive">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Adhérent</th>
+          <th>Livre</th>
+          <th>Date de demande</th>
+          <th>À rendre le</th>
+          <th>Retourné le</th>
+          <th>Statut</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let b of paginatedBorrows" class="row-clickable" (click)="openDetails(b)">
+          <td><strong>{{ getUserName(b.userId) }}</strong></td>
+          <td>{{ getBookNameFor(b.bookId) }}</td>
+          <td>{{ b.issueDate ? (b.issueDate | date:'dd/MM/yyyy') : '—' }}</td>
+          <td>{{ b.dueDate ? (b.dueDate | date:'dd/MM/yyyy') : '—' }}</td>
+          <td>{{ b.returnDate ? (b.returnDate | date:'dd/MM/yyyy') : '—' }}</td>
+          <td><span [class]="getStatutClass(b.statut)">{{ getStatutLabel(b.statut) }}</span></td>
+          <td class="actions-cell">
+            <button (click)="openDetails(b)" class="action-btn action-btn-primary" title="Voir les détails">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.133 13.133 0 0 1 1.172 8"/>
+                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+              </svg>
+            </button>
+            <button *ngIf="b.statut === 'EN_ATTENTE'" (click)="openValidateConfirm(b)"
+                    class="action-btn action-btn-success" title="Valider">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
+              </svg>
+            </button>
+            <button *ngIf="b.statut === 'VALIDEE' && !b.returnDate" (click)="openReturnConfirm(b)"
+                    class="action-btn action-btn-warning" title="Retourner">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+                <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+              </svg>
+            </button>
+            <button *ngIf="b.statut === 'EN_ATTENTE' || b.statut === 'VALIDEE'" (click)="openRefuseConfirm(b)"
+                    class="action-btn action-btn-danger" title="Refuser">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </button>
+            <button (click)="openDeleteConfirmFromTable(b)" class="action-btn action-btn-danger" title="Supprimer">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3V2h11v1z"/>
+              </svg>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination (tableau des emprunts) -->
+  <div class="table-footer">
+    <div class="pagination">
+      <button class="nav-btn" (click)="goToBorrowPage(borrowPage - 1)" [disabled]="borrowPage === 1">{{ t.t('pagination.prev') }}</button>
+      <button *ngFor="let p of borrowPageNumbers" class="page-btn" (click)="goToBorrowPage(p)" [class.active]="p === borrowPage">{{ p }}</button>
+      <button class="nav-btn" (click)="goToBorrowPage(borrowPage + 1)" [disabled]="borrowPage === borrowTotalPages">{{ t.t('pagination.next') }}</button>
+    </div>
+  </div>
+</div>
+
+<!-- Chargement -->
 <div *ngIf="loading" class="loading-state">
   <div class="spinner"></div>
   <p>{{ t.t('loading.text') }}</p>
 </div>
 
-<!-- Empty state -->
-<div *ngIf="!loading && books.length === 0" class="empty-state">
-  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" fill="currentColor" viewBox="0 0 16 16" style="opacity: 0.3;">
-    <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492z"/>
-  </svg>
-  <h3>{{ t.t('borrow.empty.title') }}</h3>
-  <p>{{ t.t('borrow.empty.text') }}</p>
-</div>
+<!-- Modal confirmation suppression simple (emprunt rendu/refusé — pas de saisie requise) -->
+<app-confirm-modal
+  [open]="showSimpleDeleteConfirm"
+  title="Supprimer l'emprunt"
+  [message]="borrowToDelete
+    ? 'Voulez-vous vraiment supprimer cet emprunt (livre « ' + getBookNameFor(borrowToDelete.bookId) + ' ») ? Cette action est irréversible.'
+    : ''"
+  confirmLabel="Supprimer"
+  [cancelLabel]="t.t('btn.cancel')"
+  [danger]="true"
+  iconBg="linear-gradient(135deg, #dc3545, #ff6b7a)"
+  (confirm)="confirmSimpleDeleteBorrow()"
+  (cancel)="cancelDelete()">
+</app-confirm-modal>
 
-<!-- Table -->
-<div *ngIf="!loading && books.length > 0" class="table-responsive">
-  <table class="data-table">
-    <thead>
-      <tr>
-        <th>{{ t.t('borrow.table.title') }}</th>
-        <th>{{ t.t('borrow.table.author') }}</th>
-        <th>{{ t.t('borrow.table.genre') }}</th>
-        <th>{{ t.t('borrow.table.copies') }}</th>
-        <th>{{ t.t('borrow.table.action') }}</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let book of books">
-        <td><strong>{{ book.bookName }}</strong></td>
-        <td>{{ book.bookAuthor }}</td>
-        <td>
-          <span class="status-badge status-disponible">{{ book.bookGenre }}</span>
-        </td>
-        <td>
-          <span [class]="book.noOfCopies > 0 ? 'status-badge status-disponible' : 'status-badge status-expiree'">
-            {{ book.noOfCopies }}
+<!-- Modal confirmation suppression emprunt (saisie du nom du livre — emprunts en cours) -->
+<app-confirm-modal
+  [open]="showDeleteConfirm"
+  title="Supprimer l'emprunt"
+  [message]="deleteMessage"
+  confirmLabel="Supprimer"
+  [cancelLabel]="t.t('btn.cancel')"
+  [danger]="true"
+  [requireInput]="true"
+  [requiredValue]="getBookNameFor(borrowToDelete?.bookId)"
+  inputLabel="Nom du livre de l'emprunt"
+  [inputPlaceholder]="getBookNameFor(borrowToDelete?.bookId)"
+  iconBg="linear-gradient(135deg, #dc3545, #ff6b7a)"
+  (confirm)="confirmDeleteBorrow()"
+  (cancel)="cancelDelete()">
+</app-confirm-modal>
+
+<!-- Modal de confirmation générique (valider / refuser / retourner / pré-suppression) -->
+<app-confirm-modal
+  [open]="showConfirmModal"
+  [title]="confirmTitle"
+  [message]="confirmMessage"
+  [confirmLabel]="confirmLabel"
+  [cancelLabel]="t.t('btn.cancel')"
+  [danger]="confirmDanger"
+  [iconBg]="confirmIconBg"
+  (confirm)="onConfirmModalConfirm()"
+  (cancel)="onConfirmModalClose()">
+</app-confirm-modal>
+
+<!-- Modal: Détails de l'emprunt -->
+<app-modal [open]="showDetailModal" title="Détails de l'emprunt" iconColor="linear-gradient(135deg, #5b4cd4, #7c4dff)" (close)="closeDetails()">
+  <div *ngIf="detailBorrow" class="detail-grid">
+    <div class="detail-row">
+      <span class="detail-label">Adhérent</span>
+      <span class="detail-value"><strong>{{ getUserName(detailBorrow.userId) }}</strong></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Livre</span>
+      <span class="detail-value"><strong>{{ getBookNameFor(detailBorrow.bookId) }}</strong></span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Date de demande</span>
+      <span class="detail-value">{{ detailBorrow.issueDate ? (detailBorrow.issueDate | date:'dd/MM/yyyy HH:mm') : '—' }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">À rendre le</span>
+      <span class="detail-value">{{ detailBorrow.dueDate ? (detailBorrow.dueDate | date:'dd/MM/yyyy') : '—' }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Retourné le</span>
+      <span class="detail-value">{{ detailBorrow.returnDate ? (detailBorrow.returnDate | date:'dd/MM/yyyy HH:mm') : '—' }}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">Statut</span>
+      <span class="detail-value"><span [class]="getStatutClass(detailBorrow.statut)">{{ getStatutLabel(detailBorrow.statut) }}</span></span>
+    </div>
+  </div>
+
+  <div class="form-actions" *ngIf="detailBorrow">
+    <button type="button" class="btn-action btn-action-outline" (click)="closeDetails()">{{ t.t('btn.close') }}</button>
+    <button *ngIf="detailBorrow.statut === 'EN_ATTENTE'" type="button" class="btn-action btn-action-success"
+            (click)="closeDetails(); openValidateConfirm(detailBorrow)">
+      Valider
+    </button>
+    <button *ngIf="detailBorrow.statut === 'VALIDEE' && !detailBorrow.returnDate" type="button" class="btn-action btn-action-warning"
+            (click)="closeDetails(); openReturnConfirm(detailBorrow)">
+      Retourner
+    </button>
+    <button *ngIf="detailBorrow.statut === 'EN_ATTENTE' || detailBorrow.statut === 'VALIDEE'" type="button" class="btn-action btn-action-danger"
+            (click)="closeDetails(); openRefuseConfirm(detailBorrow)">
+      Refuser
+    </button>
+  </div>
+</app-modal>
+
+<!-- Modal: Nouvel emprunt -->
+<app-modal [open]="showBorrowModal" title="Nouvel emprunt" iconColor="linear-gradient(135deg, #5b4cd4, #7c4dff)" (close)="closeBorrowModal()">
+  <form (ngSubmit)="submitBorrow()" class="modal-form">
+    <div class="form-message form-error" *ngIf="formError">{{ formError }}</div>
+
+    <div class="form-group" *ngIf="isStaff">
+      <label>Adhérent <span class="required-mark">*</span></label>
+      <select [(ngModel)]="modalSelectedUserId" name="borrowUserId" required>
+        <option [ngValue]="null" disabled>Sélectionner un adhérent…</option>
+        <option *ngFor="let u of users" [ngValue]="u.userId">{{ u.name }} ({{ u.username }})</option>
+      </select>
+      <div class="form-hint form-hint-muted">Le personnel peut emprunter pour n'importe quel adhérent.</div>
+    </div>
+
+    <div class="form-group" *ngIf="isStaff">
+      <label>Livre <span class="required-mark">*</span></label>
+      <select [(ngModel)]="modalSelectedBookId" name="borrowBookId" required>
+        <option [ngValue]="null" disabled>Sélectionner un livre…</option>
+        <option *ngFor="let book of books" [ngValue]="book.bookId" [disabled]="book.noOfCopies < 1">
+          {{ book.bookName }} — {{ book.noOfCopies }} exemplaire(s)
+        </option>
+      </select>
+    </div>
+
+    <!-- Adhérent : recherche prédictive du livre -->
+    <div class="form-group autocomplete" *ngIf="!isStaff">
+      <label>Livre <span class="required-mark">*</span></label>
+      <input type="text" class="form-control" name="adherentBookQuery" autocomplete="off"
+             placeholder="Tapez le nom du livre…"
+             [value]="adherentBookQuery"
+             (input)="onAdherentBookInput($event)"
+             (keydown)="onAdherentBookKeydown($event)"
+             (blur)="onAdherentBookBlur()">
+      <div class="autocomplete-list" *ngIf="showBookSuggestions && adherentSuggestions.length > 0">
+        <button type="button"
+                class="autocomplete-item"
+                *ngFor="let book of adherentSuggestions; let i = index"
+                [class.active]="i === highlightedIndex || i === hoveredIndex"
+                (mouseenter)="hoveredIndex = i"
+                (mouseleave)="hoveredIndex = -1"
+                (mousedown)="selectAdherentBook(book)">
+          <span class="autocomplete-name">{{ book.bookName }}</span>
+          <span class="autocomplete-meta">
+            {{ book.bookAuthor }}
+            <span [class]="book.noOfCopies > 0 ? 'status-badge status-disponible' : 'status-badge status-expiree'">
+              {{ book.noOfCopies }} ex.
+            </span>
           </span>
-        </td>
-        <td>
-          <button *ngIf="book.noOfCopies > 0"
-                  (click)="borrowBook(book.bookId)" class="action-btn action-btn-success"
-                  [title]="t.t('borrow.action')"
-                  [disabled]="borrowingBookId === book.bookId">
-            <span *ngIf="borrowingBookId === book.bookId" class="spinner-sm"></span>
-            <svg *ngIf="borrowingBookId !== book.bookId" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-              <path d="M11.251.068a.5.5 0 0 1 .227.58L9.677 6.5H13a.5.5 0 0 1 .364.843l-8 8.5a.5.5 0 0 1-.842-.49L6.323 9.5H3a.5.5 0 0 1-.364-.843l8-8.5a.5.5 0 0 1 .615-.09z"/>
-            </svg>
-          </button>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+        </button>
+      </div>
+      <div class="form-hint" *ngIf="modalSelectedBookId !== null && selectedBookCopies > 0">
+        <span class="hint-ok">Sélectionné :</span> {{ adherentBookQuery }} — {{ selectedBookCopies }} exemplaire(s)
+      </div>
+      <!-- Livre existant mais indisponible (0 exemplaire) -->
+      <div class="form-hint form-hint-error" *ngIf="unavailableBook">
+        « {{ unavailableBook.bookName }} » est indisponible (0 exemplaire).
+        <button type="button" class="btn-link-reserve" (click)="goReserveBook()">Le réserver</button>
+      </div>
+      <!-- Aucun livre au catalogue ne correspond -->
+      <div class="form-hint form-hint-error" *ngIf="unknownBookQuery">
+        Aucun livre « {{ unknownBookQuery }} » au catalogue.
+        <button type="button" class="btn-link-reserve" (click)="goReserveBook()">Le réserver quand même</button>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="button" class="btn-action btn-action-outline" (click)="closeBorrowModal()">{{ t.t('btn.cancel') }}</button>
+      <button type="submit" class="btn-action btn-action-primary" [disabled]="!isBorrowFormValid || formSubmitting">
+        <span *ngIf="formSubmitting" class="spinner-sm"></span>
+        {{ formSubmitting ? '…' : (isStaff ? 'Valider l\'emprunt' : 'Envoyer la demande') }}
+      </button>
+      <span *ngIf="!isStaff && quotaReached" class="status-badge status-expiree" style="align-self: center;">Quota atteint</span>
+    </div>
+  </form>
+</app-modal>

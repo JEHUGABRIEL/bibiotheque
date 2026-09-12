@@ -23,6 +23,7 @@
   [isStaff]="isStaff"
   (filterChange)="onFilterChange($event)"
   (cancelRequest)="openCancelConfirm($event)"
+  (acceptRequest)="openAcceptConfirm($event)"
   (openDetails)="openDetails($event)"
   (retryRequest)="onErrorRetry()">
 </app-reservation-list>
@@ -31,7 +32,7 @@
 <app-modal [open]="showCreateModal" [title]="t.t('reservations.add.title')" iconColor="linear-gradient(135deg, #4f6df5, #7c4dff)" (close)="showCreateModal = false">
   <form (ngSubmit)="onSubmitReservation()" class="modal-form">
     <div class="form-group autocomplete">
-      <label>Livre</label>
+      <label>Livre <span class="required-mark">*</span></label>
       <input type="text" class="form-control" name="bookQuery" autocomplete="off"
              [placeholder]="t.t('reservations.select.book')"
              [value]="bookQuery"
@@ -54,46 +55,31 @@
             </span>
           </span>
         </button>
-        <!-- Livre absent du catalogue : le créer puis le réserver -->
         <button type="button" class="autocomplete-item autocomplete-create" (mousedown)="selectNewBook()">
           <span class="autocomplete-name">＋ {{ createNewLabel }}</span>
           <span class="autocomplete-meta">{{ createNewHint }}</span>
         </button>
       </div>
-      <div class="form-hint" *ngIf="selectedBookId !== null">✓ {{ bookQuery }}</div>
-      <div class="form-hint" *ngIf="selectedBookId === null && newBookName">✓ {{ newBookName }} — nouveau livre</div>
+      <div class="form-hint" *ngIf="selectedBookId !== null"><span class="hint-ok">Sélectionné :</span> {{ bookQuery }}</div>
+      <div class="form-hint" *ngIf="selectedBookId === null && newBookName"><span class="hint-ok">Sélectionné :</span> {{ newBookName }} — nouveau livre</div>
       <div class="form-hint form-hint-muted">{{ t.t('reservations.select.book.hint') }}</div>
     </div>
-    <div class="form-group">
-      <label>Adhérent</label>
-      <!-- Le personnel choisit l'adhérent ; un ADHERENT n'a pas le choix :
-           le backend force l'identité du token (RS-04). -->
-      <select *ngIf="isStaff && users.length > 0" [(ngModel)]="selectedUserId" name="userId" required>
+    <div class="form-group" *ngIf="isStaff">
+      <label>Adhérent <span class="required-mark">*</span></label>
+      <select *ngIf="users.length > 0" [(ngModel)]="selectedUserId" name="userId" required
+              [class.input-error]="isStaff && selectedUserId === null && formSubmitting"
+              (change)="onUserSelect()">
         <option [ngValue]="null" disabled>{{ t.t('reservations.select.user') }}</option>
         <option *ngFor="let user of users" [ngValue]="user.userId">
           {{ user.name }} ({{ user.username }})
         </option>
       </select>
-      <div *ngIf="!isStaff" class="form-empty-select">
-        {{ t.t('reservations.select.user.self') }}
-      </div>
-      <div *ngIf="isStaff && users.length === 0" class="form-empty-select">
+      <div *ngIf="users.length === 0" class="form-empty-select">
         {{ t.t('reservations.no.users') }}
       </div>
-    </div>
-
-    <div *ngIf="formError" class="form-message form-error">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-        <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
-      </svg>
-      {{ formError }}
-    </div>
-    <div *ngIf="formSuccess" class="form-message form-success">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
-      </svg>
-      {{ formSuccess }}
+      <div *ngIf="selectedUserId === null && formSubmitting" class="form-hint form-hint-error">
+        Veuillez sélectionner un adhérent pour continuer
+      </div>
     </div>
 
     <div class="form-actions">
@@ -107,16 +93,30 @@
   </form>
 </app-modal>
 
+<!-- Modal confirmation acceptation d'une demande (staff) -->
+<app-confirm-modal
+  [open]="showAcceptConfirm"
+  title="Accepter la demande"
+  [message]="reservationToAccept
+    ? 'Accepter la demande de réservation de « ' + (bookNames.get(reservationToAccept.bookId) || 'ce livre') + ' » par ' + (userNames.get(reservationToAccept.userId) || 'cet adhérent') + ' ? Elle deviendra une réservation en attente.'
+    : ''"
+  confirmLabel="Accepter"
+  [cancelLabel]="t.t('btn.cancel')"
+  iconBg="linear-gradient(135deg, #2fbf71, #7bd88f)"
+  (confirm)="confirmAccept()"
+  (cancel)="acceptModalClose()">
+</app-confirm-modal>
+
 <!-- Modal confirmation annulation -->
 <app-confirm-modal
   [open]="showCancelConfirm"
   title="Annuler la réservation"
-  [message]="cancelError || cancelSuccess || t.t('reservations.cancel.confirm')"
-  [confirmLabel]="cancelError ? t.t('btn.close') : (cancelSuccess ? t.t('btn.close') : t.t('reservations.cancel'))"
+  [message]="'Voulez-vous vraiment annuler cette réservation ? Cette action est irréversible.'"
+  [confirmLabel]="t.t('reservations.cancel')"
   [cancelLabel]="t.t('btn.cancel')"
-  [danger]="!cancelError && !cancelSuccess"
-  [iconBg]="cancelError ? 'linear-gradient(135deg, #7c4dff, #5b4cd4)' : (cancelSuccess ? 'linear-gradient(135deg, #7c4dff, #5b4cd4)' : 'linear-gradient(135deg, #dc3545, #ff6b7a)')"
-  (confirm)="cancelError || cancelSuccess ? cancelModalClose() : confirmCancel()"
+  [danger]="true"
+  iconBg="linear-gradient(135deg, #dc3545, #ff6b7a)"
+  (confirm)="confirmCancel()"
   (cancel)="cancelModalClose()">
 </app-confirm-modal>
 
@@ -148,6 +148,10 @@
   </div>
   <div class="form-actions">
     <button type="button" class="btn-action btn-action-outline" (click)="showDetailModal = false">{{ t.t('btn.close') }}</button>
+    <button *ngIf="isStaff && detailReservation?.statut === 'DEMANDE'" type="button" class="btn-action btn-action-success"
+            (click)="showDetailModal = false; openAcceptConfirm(detailReservation!)">
+      Accepter
+    </button>
     <button *ngIf="canCancelDetail" type="button" class="btn-action btn-action-danger"
             (click)="showDetailModal = false; openCancelConfirm(detailReservation!)">
       {{ t.t('reservations.cancel') }}

@@ -82,7 +82,7 @@ class ReservationServiceNewBookTest {
         assertThat(livreCree.getValue().getBookName()).isEqualTo("Dune");
         assertThat(livreCree.getValue().getNoOfCopies()).isZero();
 
-        assertThat(creee.getStatut()).isEqualTo(StatutReservation.EN_ATTENTE);
+        assertThat(creee.getStatut()).isEqualTo(StatutReservation.DEMANDE);
         assertThat(creee.getBookId()).isEqualTo(7);
     }
 

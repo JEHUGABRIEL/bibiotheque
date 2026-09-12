@@ -245,7 +245,70 @@ class ReservationSecurityIntegrationTest {
                         .contentType(APPLICATION_JSON)
                         .content("{\"bookId\":3,\"userId\":10}"))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.statut").value("EN_ATTENTE"))
+                .andExpect(jsonPath("$.statut").value("DEMANDE"))
                 .andExpect(jsonPath("$.userId").value(10));
+    }
+
+    // ------------------------------------------------------------------
+    // Workflow DEMANDE → acceptation par le personnel
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("Workflow : un adhérent qui soumet une réservation crée une DEMANDE ; le staff l'accepte → EN_ATTENTE")
+    void workflow_adherentCreeDemande_staffAccepte_versEnAttente() throws Exception {
+        // 1. L'adhérent soumet → DEMANDE (201)
+        when(usersRepository.findByUsername("alice"))
+                .thenReturn(Optional.of(utilisateur("alice", 10, "ADHERENT")));
+        when(usersRepository.findById(10)).thenReturn(Optional.of(utilisateur("alice", 10, "ADHERENT")));
+        when(booksRepository.findById(3)).thenReturn(Optional.of(livre(3, "Dune", 0)));
+        when(reservationRepository.existsByBookIdAndStatutIn(eq(3), anyList())).thenReturn(false);
+        when(reservationRepository.countByUserIdAndStatutIn(eq(10), anyList())).thenReturn(0L);
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(post(ENDPOINT)
+                        .header("Authorization", "Bearer " + tokenPour("alice"))
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"bookId\":3,\"userId\":10}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.statut").value("DEMANDE"));
+
+        // 2. Un adhérent ne peut PAS accepter (403)
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .patch(ENDPOINT + "/55/accepter").header("Authorization", "Bearer " + tokenPour("alice")))
+                .andExpect(status().isForbidden());
+
+        // 3. Le personnel accepte → EN_ATTENTE (200)
+        when(usersRepository.findByUsername("biblio"))
+                .thenReturn(Optional.of(utilisateur("biblio", 1, "BIBLIOTHECAIRE")));
+        Reservation demande = reservationDe(10, 55L);
+        demande.setStatut(StatutReservation.DEMANDE);
+        when(reservationRepository.findById(55L)).thenReturn(Optional.of(demande));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .patch(ENDPOINT + "/55/accepter").header("Authorization", "Bearer " + tokenPour("biblio")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.statut").value("EN_ATTENTE"));
+    }
+
+    @Test
+    @DisplayName("Workflow : accepter une réservation qui n'est pas une DEMANDE est refusé (409)")
+    void accepter_statutNonDemande_renvoie409() throws Exception {
+        when(usersRepository.findByUsername("biblio"))
+                .thenReturn(Optional.of(utilisateur("biblio", 1, "BIBLIOTHECAIRE")));
+        when(reservationRepository.findById(55L)).thenReturn(Optional.of(reservationDe(10, 55L))); // EN_ATTENTE
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .patch(ENDPOINT + "/55/accepter").header("Authorization", "Bearer " + tokenPour("biblio")))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message", containsString("DEMANDE")));
+    }
+
+    @Test
+    @DisplayName("Workflow : accepter sans token renvoie 401")
+    void accepter_sansToken_renvoie401() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .patch(ENDPOINT + "/55/accepter"))
+                .andExpect(status().isUnauthorized());
     }
 }

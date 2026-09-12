@@ -103,36 +103,22 @@
 <app-modal [open]="showCreateModal" [title]="t.t('books.add.title')" iconColor="linear-gradient(135deg, #5b4cd4, #7c4dff)" (close)="showCreateModal = false">
   <form (ngSubmit)="submitCreate()" class="modal-form">
     <div class="form-group">
-      <label>{{ t.t('books.name') }}</label>
+      <label>{{ t.t('books.name') }} <span class="required-mark">*</span></label>
       <input type="text" [(ngModel)]="newBook.bookName" name="bookName" [placeholder]="t.t('books.name.placeholder')" required>
     </div>
     <div class="form-row-2">
       <div class="form-group">
-        <label>{{ t.t('books.author') }}</label>
+        <label>{{ t.t('books.author') }} <span class="required-mark">*</span></label>
         <input type="text" [(ngModel)]="newBook.bookAuthor" name="bookAuthor" [placeholder]="t.t('books.author.placeholder')" required>
       </div>
       <div class="form-group">
-        <label>{{ t.t('books.genre') }}</label>
-        <input type="text" [(ngModel)]="newBook.bookGenre" name="bookGenre" [placeholder]="t.t('books.genre.placeholder')">
+        <label>{{ t.t('books.genre') }} <span class="required-mark">*</span></label>
+        <input type="text" [(ngModel)]="newBook.bookGenre" name="bookGenre" [placeholder]="t.t('books.genre.placeholder')" required>
       </div>
     </div>
     <div class="form-group">
-      <label>{{ t.t('books.copies') }}</label>
-      <input type="number" [(ngModel)]="newBook.noOfCopies" name="noOfCopies" min="0" [placeholder]="t.t('books.copies.placeholder')">
-    </div>
-
-    <div *ngIf="createError" class="form-message form-error">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-        <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
-      </svg>
-      {{ createError }}
-    </div>
-    <div *ngIf="createSuccess" class="form-message form-success">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
-      </svg>
-      {{ createSuccess }}
+      <label>{{ t.t('books.copies') }} <span class="required-mark">*</span></label>
+      <input type="number" [(ngModel)]="newBook.noOfCopies" name="noOfCopies" min="0" [placeholder]="t.t('books.copies.placeholder')" required>
     </div>
 
     <div class="form-actions">
@@ -149,36 +135,22 @@
 <app-modal [open]="showEditModal" [title]="t.t('books.edit.title')" iconColor="linear-gradient(135deg, #7c4dff, #5b4cd4)" (close)="showEditModal = false">
   <form (ngSubmit)="submitEdit()" class="modal-form">
     <div class="form-group">
-      <label>{{ t.t('books.name') }}</label>
+      <label>{{ t.t('books.name') }} <span class="required-mark">*</span></label>
       <input type="text" [(ngModel)]="editBook.bookName" name="bookName" [placeholder]="t.t('books.name.placeholder')" required>
     </div>
     <div class="form-row-2">
       <div class="form-group">
-        <label>{{ t.t('books.author') }}</label>
+        <label>{{ t.t('books.author') }} <span class="required-mark">*</span></label>
         <input type="text" [(ngModel)]="editBook.bookAuthor" name="bookAuthor" [placeholder]="t.t('books.author.placeholder')" required>
       </div>
       <div class="form-group">
-        <label>{{ t.t('books.genre') }}</label>
-        <input type="text" [(ngModel)]="editBook.bookGenre" name="bookGenre" [placeholder]="t.t('books.genre.placeholder')">
+        <label>{{ t.t('books.genre') }} <span class="required-mark">*</span></label>
+        <input type="text" [(ngModel)]="editBook.bookGenre" name="bookGenre" [placeholder]="t.t('books.genre.placeholder')" required>
       </div>
     </div>
     <div class="form-group">
-      <label>{{ t.t('books.copies') }}</label>
-      <input type="number" [(ngModel)]="editBook.noOfCopies" name="noOfCopies" min="0" [placeholder]="t.t('books.copies.placeholder')">
-    </div>
-
-    <div *ngIf="editError" class="form-message form-error">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-        <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
-      </svg>
-      {{ editError }}
-    </div>
-    <div *ngIf="editSuccess" class="form-message form-success">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-        <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
-      </svg>
-      {{ editSuccess }}
+      <label>{{ t.t('books.copies') }} <span class="required-mark">*</span></label>
+      <input type="number" [(ngModel)]="editBook.noOfCopies" name="noOfCopies" min="0" [placeholder]="t.t('books.copies.placeholder')" required>
     </div>
 
     <div class="form-actions">
@@ -191,14 +163,18 @@
   </form>
 </app-modal>
 
-<!-- Modal confirmation suppression -->
+<!-- Modal confirmation suppression avec saisie du nom -->
 <app-confirm-modal
   [open]="showDeleteConfirm"
-  [title]="t.t('books.edit.title')"
+  title="Supprimer le livre"
   [message]="deleteMessage"
-  [confirmLabel]="t.t('btn.confirm')"
+  confirmLabel="Supprimer"
   [cancelLabel]="t.t('btn.cancel')"
   [danger]="true"
+  [requireInput]="true"
+  [requiredValue]="bookToDelete?.bookName || ''"
+  inputLabel="Nom du livre à supprimer"
+  [inputPlaceholder]="bookToDelete?.bookName || ''"
   iconBg="linear-gradient(135deg, #dc3545, #ff6b7a)"
   (confirm)="confirmDelete()"
   (cancel)="cancelDelete()">
@@ -232,9 +208,9 @@
     </div>
   </div>
 
-  <div class="form-actions" *ngIf="!detailLoading && detailBook" style="flex-wrap: wrap;">
+  <div class="detail-modal-actions" *ngIf="!detailLoading && detailBook">
     <button type="button" class="btn-action btn-action-outline" (click)="showDetailModal = false">{{ t.t('btn.close') }}</button>
-    <div style="display: flex; gap: 0.5rem; margin-left: auto; flex-wrap: wrap;">
+    <div class="detail-modal-actions-right">
       <button *ngIf="isStaff" type="button" class="btn-action btn-action-warning" (click)="editFromDetail()" [title]="t.t('btn.edit')">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
           <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5v-1a.5.5 0 0 1 .5-.5h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.293.458"/>

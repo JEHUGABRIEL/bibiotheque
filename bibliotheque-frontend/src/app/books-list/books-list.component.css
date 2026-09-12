@@ -1,0 +1,37 @@
+.required-mark {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+/* Detail modal actions layout */
+.detail-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color, #2d3143);
+  margin-top: 1rem;
+}
+
+.detail-modal-actions-right {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .detail-modal-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .detail-modal-actions-right {
+    justify-content: stretch;
+  }
+
+  .detail-modal-actions-right .btn-action {
+    flex: 1;
+  }
+}

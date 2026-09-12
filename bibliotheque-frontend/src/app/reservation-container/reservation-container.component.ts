@@ -6,7 +6,9 @@ import { Users } from '../_model/users';
 import { Reservation, StatutReservation } from '../_model/reservation';
 import { ReservationService } from '../_service/reservation.service';
 import { UsersService } from '../_service/users.service';
-import { UserAuthService } from '../_service/user-auth.service';import { TranslationService } from '../_service/translation.service';
+import { UserAuthService } from '../_service/user-auth.service';
+import { TranslationService } from '../_service/translation.service';
+import { ToastService } from '../_service/toast.service';
 
 @Component({
   selector: 'app-reservation-container',
@@ -47,6 +49,10 @@ export class ReservationContainerComponent implements OnInit {
   cancelError: string | null = null;
   cancelSuccess: string | null = null;
 
+  // Accept confirmation (staff : DEMANDE → EN_ATTENTE)
+  showAcceptConfirm = false;
+  reservationToAccept: Reservation | null = null;
+
   // Details modal
   showDetailModal = false;
   detailReservation: Reservation | null = null;
@@ -56,7 +62,8 @@ export class ReservationContainerComponent implements OnInit {
     private usersService: UsersService,
     private userAuthService: UserAuthService,
     private route: ActivatedRoute,
-    public t: TranslationService
+    public t: TranslationService,
+    private toast: ToastService
   ) { }
 
   /** Le personnel (BIBLIOTHECAIRE / Admin) peut réserver pour n'importe quel adhérent. */
@@ -75,27 +82,43 @@ export class ReservationContainerComponent implements OnInit {
     this.loadUsers();
 
     // Arrivée depuis la modale « Détail du livre » : ?reserve=<bookId>
-    // ouvre directement le formulaire avec le livre pré-sélectionné.
+    // ou depuis l'emprunt adhérent : ?reserveName=<nom> (livre inconnu).
+    // Les deux ouvrent directement le formulaire avec le livre pré-rempli.
     this.route.queryParamMap.subscribe(params => {
       const reserveId = params.get('reserve');
       if (reserveId) {
         this.pendingReserveId = Number(reserveId);
-        this.applyPendingReserve();
       }
+      const reserveName = params.get('reserveName');
+      if (reserveName) {
+        this.pendingReserveName = reserveName;
+      }
+      this.applyPendingReserve();
     });
   }
 
   /** Id de livre à pré-sélectionner (venant de la modale détail du livre). */
   private pendingReserveId: number | null = null;
+  /** Nom d'un livre à pré-remplir (venant de l'emprunt adhérent, livre inconnu). */
+  private pendingReserveName: string | null = null;
 
   /** Applique le pré-remplissage — après le chargement du catalogue si besoin. */
   private applyPendingReserve() {
-    if (this.pendingReserveId === null) return;
-    const book = this.books.find(b => b.bookId === this.pendingReserveId);
-    if (!book) return; // catalogue pas encore chargé : réessayé après loadBooks
-    this.openCreateModal();
-    this.selectBookSuggestion(book);
-    this.pendingReserveId = null;
+    if (this.pendingReserveId !== null) {
+      const book = this.books.find(b => b.bookId === this.pendingReserveId);
+      if (!book) return; // catalogue pas encore chargé : réessayé après loadBooks
+      this.openCreateModal();
+      this.selectBookSuggestion(book);
+      this.pendingReserveId = null;
+    } else if (this.pendingReserveName !== null) {
+      this.openCreateModal();
+      this.selectedBookId = null;
+      this.newBookName = this.pendingReserveName;
+      this.bookQuery = this.pendingReserveName;
+      this.showBookSuggestions = false;
+      this.highlightedIndex = -1;
+      this.pendingReserveName = null;
+    }
   }
 
   loadReservations() {
@@ -125,17 +148,13 @@ export class ReservationContainerComponent implements OnInit {
   loadBooks() {
     this.reservationService.getBooksCatalog().subscribe({
       next: (books) => {
-        // On garde TOUS les livres : les indisponibles (0 exemplaire) sont
-        // sélectionnables, les disponibles sont désactivés (RG-01).
-        // Un filtre dur ici laissait le modal vide dès que tous les livres
-        // avaient des exemplaires — semblait un échec de chargement.
         this.books = books;
         books.forEach(b => this.bookNames.set(b.bookId, b.bookName));
         this.applyPendingReserve();
       },
       error: (err: HttpErrorResponse) => {
         if (err.status !== 0) {
-          this.formError = `Erreur lors du chargement des livres : ${err.error?.message || 'Erreur ' + err.status}`;
+          this.toast.error(`Erreur lors du chargement des livres : ${err.error?.message || 'Erreur ' + err.status}`);
         }
       }
     });
@@ -146,13 +165,6 @@ export class ReservationContainerComponent implements OnInit {
     return (book.noOfCopies ?? 0) <= 0;
   }
 
-  /**
-   * Suggestions de la recherche prédictive — tous les livres du catalogue
-   * dont le nom contient la requête (insensible à la casse/accents).
-   * Pourquoi tous : n'afficher que les 0 exemplaire donnait une liste vide
-   * (et un formulaire sans réaction) tant que tous les livres étaient en rayon.
-   * Les suggestions marquent quand même ce qui est réellement réservable.
-   */
   get bookSuggestions(): Books[] {
     const q = this.normalize(this.bookQuery);
     if (!q) return [];
@@ -161,22 +173,18 @@ export class ReservationContainerComponent implements OnInit {
       .slice(0, 8);
   }
 
-  /** Une option « créer ce livre » si la requête ne correspond à aucun titre. */
   get canCreateNewBook(): boolean {
     return !this.selectedBookId && !!this.bookQuery.trim();
   }
 
-  /** Libellé de l'option « créer ce livre » (traduit, requête interpolée). */
   get createNewLabel(): string {
     return this.t.t('reservations.select.book.new').replace('{{ q }}', this.bookQuery.trim());
   }
 
-  /** Aide contextuelle de l'option « créer ce livre ». */
   get createNewHint(): string {
     return this.t.t('reservations.select.book.new.hint');
   }
 
-  /** Minuscules + sans accents, pour une recherche tolérante. */
   private normalize(value: string): string {
     return (value || '')
       .toLowerCase()
@@ -200,7 +208,6 @@ export class ReservationContainerComponent implements OnInit {
     this.highlightedIndex = -1;
   }
 
-  /** Réserver un livre qui n'existe pas encore dans le catalogue. */
   selectNewBook() {
     this.selectedBookId = null;
     this.newBookName = this.bookQuery.trim();
@@ -208,7 +215,12 @@ export class ReservationContainerComponent implements OnInit {
     this.highlightedIndex = -1;
   }
 
-  /** Pré-remplit le formulaire pour un livre donné (depuis la modale de détail). */
+  onUserSelect() {
+    if (this.selectedUserId !== null && this.formError?.includes('adhérent')) {
+      this.formError = null;
+    }
+  }
+
   prefillForBook(book: Books) {
     this.showDetailModal = false;
     this.openCreateModal();
@@ -222,8 +234,7 @@ export class ReservationContainerComponent implements OnInit {
 
   onBookSearchKeydown(event: KeyboardEvent) {
     const suggestions = this.bookSuggestions;
-    // La dernière position « virtuelle » est l'option « créer ce livre »
-    const maxIndex = suggestions.length; // = index de l'option de création
+    const maxIndex = suggestions.length;
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
@@ -250,7 +261,6 @@ export class ReservationContainerComponent implements OnInit {
   }
 
   onBookSearchBlur() {
-    // Délai : laisser le (mousedown) des suggestions s'exécuter avant de fermer.
     setTimeout(() => { this.showBookSuggestions = false; }, 150);
   }
 
@@ -262,21 +272,21 @@ export class ReservationContainerComponent implements OnInit {
     return this.books.filter(b => !this.isBookReservable(b));
   }
 
-  /** Liste des adhérents — endpoint Admin, réservé au personnel. */
   loadUsers() {
     if (!this.isStaff) {
-      return; // un adhérent n'a pas besoin de la liste : le backend force userId de toute façon (RS-04)
+      return;
     }
     this.usersService.getUsersList().subscribe({
       next: (users) => {
-        this.users = users;
+        // Filter out Admin/Bibliothécaire — only show adhérents in the selection list
+        this.users = users.filter(u => !this.usersService.isStaffRole(u.role?.[0]?.roleName ?? ''));
         users.forEach(u => this.userNames.set(u.userId, u.name));
       },
       error: (err: HttpErrorResponse) => {
         if (err.status === 0) {
-          this.formError = 'Impossible de charger les adhérents. Le serveur est injoignable.';
+          this.toast.error('Impossible de charger les adhérents. Le serveur est injoignable.');
         } else {
-          this.formError = `Erreur lors du chargement des adhérents : ${err.error?.message || 'Erreur ' + err.status}`;
+          this.toast.error(`Erreur lors du chargement des adhérents : ${err.error?.message || 'Erreur ' + err.status}`);
         }
       }
     });
@@ -287,23 +297,23 @@ export class ReservationContainerComponent implements OnInit {
     this.loadReservations();
   }
 
-  /** Détails en modale — plus de navigation vers une page séparée. */
   openDetails(reservation: Reservation) {
     this.detailReservation = reservation;
     this.showDetailModal = true;
   }
 
-  /** Le compte connecté peut-il annuler la réservation affichée en modale ? */
   get canCancelDetail(): boolean {
     const r = this.detailReservation;
     if (!r) return false;
-    const statutOk = r.statut === StatutReservation.EN_ATTENTE || r.statut === StatutReservation.DISPONIBLE;
+    const statutOk = r.statut === StatutReservation.DEMANDE
+      || r.statut === StatutReservation.EN_ATTENTE
+      || r.statut === StatutReservation.DISPONIBLE;
     return statutOk && (this.isStaff || r.userId === this.currentUserId);
   }
 
-  /** Libellé traduit du statut (miroir de la liste, pour la modale de détail). */
   getStatutLabel(statut: StatutReservation): string {
     const labels: Record<string, string> = {
+      'DEMANDE': 'Demande',
       'EN_ATTENTE': this.t.t('status.pending'),
       'DISPONIBLE': this.t.t('status.available'),
       'ANNULEE': this.t.t('status.cancelled'),
@@ -315,8 +325,9 @@ export class ReservationContainerComponent implements OnInit {
 
   getStatutClass(statut: StatutReservation): string {
     const classes: Record<string, string> = {
-      'EN_ATTENTE': 'status-badge status-en-attente',
-      'DISPONIBLE': 'status-badge status-disponible',
+      'DEMANDE': 'status-badge status-en-attente',
+      'EN_ATTENTE': 'status-badge status-disponible',
+      'DISPONIBLE': 'status-badge status-honoree',
       'ANNULEE': 'status-badge status-annulee',
       'EXPIREE': 'status-badge status-expiree',
       'HONOREE': 'status-badge status-honoree'
@@ -354,15 +365,18 @@ export class ReservationContainerComponent implements OnInit {
   }
 
   get isFormValid(): boolean {
-    // Livre existant sélectionné OU nom de nouveau livre saisi
     const bookOk = this.selectedBookId !== null || !!this.newBookName?.trim();
     if (!bookOk) return false;
-    // Un adhérent ne choisit pas l'adhérent : le backend impose son identité (RS-04)
     return this.isStaff ? this.selectedUserId !== null : true;
   }
 
   onSubmitReservation() {
-    if (!this.isFormValid) return;
+    if (!this.isFormValid) {
+      if (this.isStaff && this.selectedUserId === null) {
+        this.formError = 'Veuillez sélectionner un adhérent pour continuer.';
+      }
+      return;
+    }
     this.formSubmitting = true;
     this.formError = null;
     this.formSuccess = null;
@@ -376,33 +390,69 @@ export class ReservationContainerComponent implements OnInit {
     if (this.isStaff) {
       reservation.userId = this.selectedUserId!;
     }
-    // Pour un ADHERENT, pas de userId dans le corps : le backend écrase/force
-    // l'identité depuis le token JWT (RS-04).
 
     this.reservationService.create(reservation).subscribe({
-      next: () => {
+      next: (created) => {
         this.formSubmitting = false;
-        this.formSuccess = 'Réservation créée avec succès';
+        const expiry = created?.dateExpiration
+          ? ' — expire le ' + this.formatDate(created.dateExpiration)
+          : '';
+        if (this.isStaff) {
+          this.toast.success('Réservation créée avec succès' + expiry);
+        } else {
+          this.toast.info('Votre demande de réservation a été envoyée. Le bibliothécaire doit l\'accepter.' + expiry);
+        }
         this.loadReservations();
-        setTimeout(() => {
-          this.showCreateModal = false;
-          this.formSuccess = null;
-        }, 1200);
+        this.showCreateModal = false;
       },
       error: (err: HttpErrorResponse) => {
         this.formSubmitting = false;
-        this.formError = this.extractErrorMessage(err);
+        this.toast.error(this.extractErrorMessage(err));
       }
     });
   }
 
-  /** Peut-on annuler la réservation donnée ? (statut + propriété ou personnel) */
   canCancelReservation(reservation: Reservation): boolean {
-    const statutOk = reservation.statut === StatutReservation.EN_ATTENTE
+    const statutOk = reservation.statut === StatutReservation.DEMANDE
+      || reservation.statut === StatutReservation.EN_ATTENTE
       || reservation.statut === StatutReservation.DISPONIBLE;
     if (!statutOk) return false;
     if (this.isStaff) return true;
     return reservation.userId === this.userAuthService.getUserId();
+  }
+
+  // --- Acceptation d'une demande (staff) ---
+  openAcceptConfirm(reservation: Reservation) {
+    this.reservationToAccept = reservation;
+    this.showAcceptConfirm = true;
+  }
+
+  confirmAccept() {
+    if (!this.reservationToAccept) return;
+    const id = this.reservationToAccept.id;
+    const bookName = this.bookNames.get(this.reservationToAccept.bookId) || 'ce livre';
+
+    this.reservationService.accepter(id).subscribe({
+      next: (updated) => {
+        const index = this.reservations.findIndex(r => r.id === updated.id);
+        if (index >= 0) {
+          this.reservations[index] = updated;
+        }
+        this.toast.success('Demande acceptée : la réservation de « ' + bookName + ' » est maintenant en attente');
+        this.showAcceptConfirm = false;
+        this.reservationToAccept = null;
+      },
+      error: (err: HttpErrorResponse) => {
+        this.toast.error(this.extractErrorMessage(err));
+        this.showAcceptConfirm = false;
+        this.reservationToAccept = null;
+      }
+    });
+  }
+
+  acceptModalClose() {
+    this.showAcceptConfirm = false;
+    this.reservationToAccept = null;
   }
 
   // --- Cancel confirmation ---
@@ -424,16 +474,14 @@ export class ReservationContainerComponent implements OnInit {
         if (index >= 0) {
           this.reservations[index] = updated;
         }
-        this.cancelSuccess = 'Réservation pour « ' + bookName + ' » annulée avec succès';
-        this.cancelError = null;
-        setTimeout(() => {
-          this.showCancelConfirm = false;
-          this.cancelSuccess = null;
-        }, 1200);
+        this.toast.success('Réservation pour « ' + bookName + ' » annulée avec succès');
+        this.showCancelConfirm = false;
+        this.reservationToCancel = null;
       },
       error: (err: HttpErrorResponse) => {
-        this.cancelError = this.extractErrorMessage(err);
-        this.cancelSuccess = null;
+        this.toast.error(this.extractErrorMessage(err));
+        this.showCancelConfirm = false;
+        this.reservationToCancel = null;
       }
     });
   }
@@ -445,16 +493,11 @@ export class ReservationContainerComponent implements OnInit {
     this.cancelSuccess = null;
   }
 
-  /**
-   * Extrait un message lisible depuis une HttpErrorResponse.
-   * Gère tous les cas : 400, 401, 403, 404, 409, 500, réseau.
-   */
   private extractErrorMessage(err: HttpErrorResponse): string {
     if (err.status === 0) {
       return 'Le serveur est injoignable. Vérifiez que le backend est démarré.';
     }
     if (err.error?.message) {
-      // 401 spécifique : proposer la reconnexion (session expirée ou invalide)
       if (err.status === 401) {
         return err.error.expired
           ? err.error.message + ' Cliquez sur Réessayer pour vous reconnecter.'
@@ -473,7 +516,6 @@ export class ReservationContainerComponent implements OnInit {
     }
   }
 
-  /** Sur une erreur de CHARGEMENT 401 : proposer la reconnexion plutôt qu'un simple retry. */
   onErrorRetry(): void {
     this.onRetry();
   }

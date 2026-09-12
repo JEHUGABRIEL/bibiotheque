@@ -33,7 +33,7 @@ public class ReservationController {
      * BIBLIOTHECAIRE : toutes les réservations.
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADHERENT') or hasRole('BIBLIOTHECAIRE') or hasRole('Admin')")
+    @PreAuthorize("hasAnyRole('ADHERENT', 'User', 'BIBLIOTHECAIRE', 'Admin')")
     public ResponseEntity<List<Reservation>> getAll(@RequestParam(required = false) StatutReservation statut,
                                                     Authentication authentication) {
         List<Reservation> list = reservationService.findAllFor(statut, authentication.getName());
@@ -41,11 +41,11 @@ public class ReservationController {
     }
 
     /**
-     * ADHERENT : pour lui-même uniquement — le service écrase l'userId du corps par celui du token (RS-04).
+     * ADHERENT/User : pour lui-même uniquement — le service écrase l'userId du corps par celui du token (RS-04).
      * BIBLIOTHECAIRE : pour n'importe qui.
      */
     @PostMapping
-    @PreAuthorize("hasRole('ADHERENT') or hasRole('BIBLIOTHECAIRE') or hasRole('Admin')")
+    @PreAuthorize("hasAnyRole('ADHERENT', 'User', 'BIBLIOTHECAIRE', 'Admin')")
     public ResponseEntity<Reservation> create(@RequestBody Reservation reservation,
                                               Authentication authentication) {
         Reservation created = reservationService.createFor(reservation, authentication.getName());
@@ -53,11 +53,21 @@ public class ReservationController {
     }
 
     /**
-     * ADHERENT : si la réservation lui appartient (sinon 403, RS-03).
+     * Le personnel accepte une DEMANDE de réservation → elle devient EN_ATTENTE.
+     * Un ADHERENT reçoit 403 (RS-02).
+     */
+    @PatchMapping("/{id}/accepter")
+    @PreAuthorize("hasAnyRole('BIBLIOTHECAIRE', 'Admin')")
+    public ResponseEntity<Reservation> accepter(@PathVariable Long id, Authentication authentication) {
+        return ResponseEntity.ok(reservationService.accepter(id, authentication.getName()));
+    }
+
+    /**
+     * ADHERENT/User : si la réservation lui appartient (sinon 403, RS-03).
      * BIBLIOTHECAIRE : toutes.
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADHERENT') or hasRole('BIBLIOTHECAIRE') or hasRole('Admin')")
+    @PreAuthorize("hasAnyRole('ADHERENT', 'User', 'BIBLIOTHECAIRE', 'Admin')")
     public ResponseEntity<Reservation> getById(@PathVariable Long id, Authentication authentication) {
         return ResponseEntity.ok(reservationService.getByIdFor(id, authentication.getName()));
     }
@@ -66,7 +76,7 @@ public class ReservationController {
      * Annulation — mêmes règles de propriété que la lecture (RS-03).
      */
     @PatchMapping("/{id}/annuler")
-    @PreAuthorize("hasRole('ADHERENT') or hasRole('BIBLIOTHECAIRE') or hasRole('Admin')")
+    @PreAuthorize("hasAnyRole('ADHERENT', 'User', 'BIBLIOTHECAIRE', 'Admin')")
     public ResponseEntity<Reservation> cancel(@PathVariable Long id, Authentication authentication) {
         return ResponseEntity.ok(reservationService.cancelFor(id, authentication.getName()));
     }

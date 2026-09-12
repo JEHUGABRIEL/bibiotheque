@@ -47,17 +47,18 @@ public class JwtService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Users user = userDao.findByUsername(username).get();
+        // orElseThrow et non .get() : un token valable mais dont le username n'existe
+        // plus en base (base réinitialisée, compte supprimé) doit lever une
+        // UsernameNotFoundException (401 propre côté JwtRequestFilter), pas un
+        // NoSuchElementException non géré (500 brut).
+        Users user = userDao.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
 
-        if (user != null) {
-            return new org.springframework.security.core.userdetails.User(
-                    user.getUsername(),
-                    user.getPassword(),
-                    getAuthority(user)
-            );
-        } else {
-            throw new UsernameNotFoundException("User not found with username: " + username);
-        }
+        return new org.springframework.security.core.userdetails.User(
+                user.getUsername(),
+                user.getPassword(),
+                getAuthority(user)
+        );
     }
 
     private Set<SimpleGrantedAuthority> getAuthority(Users user) {

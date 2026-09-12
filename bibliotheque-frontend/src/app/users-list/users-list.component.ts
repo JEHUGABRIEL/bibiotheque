@@ -6,6 +6,7 @@ import { UsersService } from '../_service/users.service';
 import { BooksService } from '../_service/books.service';
 import { BorrowService } from '../_service/borrow.service';
 import { TranslationService } from '../_service/translation.service';
+import { ToastService } from '../_service/toast.service';
 import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
@@ -58,14 +59,10 @@ export class UsersListComponent implements OnInit {
   newUser: Users = new Users();
   newSelectedRole = 'User';
   createLoading = false;
-  createError: string | null = null;
-  createSuccess: string | null = null;
 
   // Edit form
   editSelectedRole = '';
   editLoading = false;
-  editError: string | null = null;
-  editSuccess: string | null = null;
 
   // Details modal
   showDetailModal = false;
@@ -77,10 +74,13 @@ export class UsersListComponent implements OnInit {
   /** Cache des livres pour afficher les titres dans l'historique d'emprunts. */
   booksCache: Books[] = [];
 
-  constructor(private usersService: UsersService,
+  constructor(
+    private usersService: UsersService,
     private booksService: BooksService,
     private borrowService: BorrowService,
-    public t: TranslationService) { }
+    public t: TranslationService,
+    private toast: ToastService
+  ) { }
 
   ngOnInit(): void {
     this.getUsers();
@@ -150,8 +150,6 @@ export class UsersListComponent implements OnInit {
   openCreateModal() {
     this.newUser = new Users();
     this.newSelectedRole = 'User';
-    this.createError = null;
-    this.createSuccess = null;
     this.showCreateModal = true;
   }
 
@@ -164,22 +162,17 @@ export class UsersListComponent implements OnInit {
 
   submitCreate() {
     this.createLoading = true;
-    this.createError = null;
-    this.createSuccess = null;
     this.newUser.role = [{ roleName: this.newSelectedRole }];
     this.usersService.createUser(this.newUser).subscribe({
       next: () => {
         this.createLoading = false;
-        this.createSuccess = 'Adhérent inscrit avec succès';
+        this.toast.success('Adhérent inscrit avec succès');
         this.getUsers();
-        setTimeout(() => {
-          this.showCreateModal = false;
-          this.createSuccess = null;
-        }, 1200);
+        this.showCreateModal = false;
       },
       error: (err: HttpErrorResponse) => {
         this.createLoading = false;
-        this.createError = err.error?.message || 'Erreur lors de l\'inscription';
+        this.toast.error(err.error?.message || 'Erreur lors de l\'inscription');
       }
     });
   }
@@ -189,8 +182,6 @@ export class UsersListComponent implements OnInit {
     this.editUser = { ...user };
     this.editUserId = user.userId;
     this.editSelectedRole = user.role?.[0]?.roleName || '';
-    this.editError = null;
-    this.editSuccess = null;
     this.showEditModal = true;
   }
 
@@ -202,22 +193,17 @@ export class UsersListComponent implements OnInit {
 
   submitEdit() {
     this.editLoading = true;
-    this.editError = null;
-    this.editSuccess = null;
     this.editUser.role = [{ roleName: this.editSelectedRole }];
     this.usersService.updateUser(this.editUserId, this.editUser).subscribe({
       next: () => {
         this.editLoading = false;
-        this.editSuccess = 'Utilisateur modifié avec succès';
+        this.toast.success('Utilisateur modifié avec succès');
         this.getUsers();
-        setTimeout(() => {
-          this.showEditModal = false;
-          this.editSuccess = null;
-        }, 1200);
+        this.showEditModal = false;
       },
       error: (err: HttpErrorResponse) => {
         this.editLoading = false;
-        this.editError = err.error?.message || 'Erreur lors de la modification';
+        this.toast.error(err.error?.message || 'Erreur lors de la modification');
       }
     });
   }

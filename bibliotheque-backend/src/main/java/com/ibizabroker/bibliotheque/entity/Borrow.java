@@ -30,4 +30,7 @@ public class Borrow {
     @JsonSerialize(using=JsonDataSerializer.class)
     Date dueDate;
 
+    @Enumerated(EnumType.STRING)
+    StatutBorrow statut = StatutBorrow.EN_ATTENTE;
+
 }

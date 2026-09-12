@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { BookDetailsComponent } from './book-details/book-details.component';
 import { BooksListComponent } from './books-list/books-list.component';
 import { BorrowBookComponent } from './borrow-book/borrow-book.component';
+import { PendingBorrowsComponent } from './pending-borrows/pending-borrows.component';
 import { CreateBookComponent } from './create-book/create-book.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { ForbiddenComponent } from './forbidden/forbidden.component';
@@ -20,7 +21,7 @@ import { AuthGuard } from './_auth/auth.guard';
 
 const routes: Routes = [
   // Gestion — personnel (Admin hérité + BIBLIOTHECAIRE)
-  {path: 'dashboard', component: DashboardComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE']}},
+  {path: 'dashboard', component: DashboardComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE','User','ADHERENT']}},
   {path: 'books', component: BooksListComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE']}},
   {path: 'create-book', component: CreateBookComponent, canActivate:[AuthGuard], data:{roles:['Admin']}},
   {path: '', component: HomeComponent},
@@ -32,10 +33,11 @@ const routes: Routes = [
   {path: 'update-user/:userId', component: UpdateUserComponent, canActivate:[AuthGuard], data:{roles:['Admin']}},
   {path: 'login', component: LoginComponent},
   {path: 'forbidden', component: ForbiddenComponent},
-  {path: 'borrow-book', component: BorrowBookComponent, canActivate:[AuthGuard], data:{roles:['User','ADHERENT']}},
-  {path: 'return-book', component: ReturnBookComponent, canActivate:[AuthGuard], data:{roles:['User','ADHERENT']}},
-  {path: 'reservations', component: ReservationContainerComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE','ADHERENT']}},
-  {path: 'reservation-details/:id', component: ReservationDetailsComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE','ADHERENT']}}
+  {path: 'borrow-book', component: BorrowBookComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE','User','ADHERENT']}},
+  {path: 'pending-borrows', component: PendingBorrowsComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE']}},
+  {path: 'return-book', component: ReturnBookComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE','User','ADHERENT']}},
+  {path: 'reservations', component: ReservationContainerComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE','ADHERENT','User']}},
+  {path: 'reservation-details/:id', component: ReservationDetailsComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE','ADHERENT','User']}}
 ];
 
 @NgModule({

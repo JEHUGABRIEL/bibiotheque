@@ -1,4 +1,6 @@
 export enum StatutReservation {
+  /** Demande soumise par un adhérent — le personnel doit l'accepter. */
+  DEMANDE = 'DEMANDE',
   EN_ATTENTE = 'EN_ATTENTE',
   DISPONIBLE = 'DISPONIBLE',
   ANNULEE = 'ANNULEE',

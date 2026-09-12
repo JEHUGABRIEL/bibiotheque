@@ -12,12 +12,12 @@
   <!-- Navigation -->
   <nav class="sidebar-nav">
 
-    <!-- Accueil / Dashboard -->
-    <a [routerLink]="isAdmin ? '/dashboard' : '/'" class="nav-item" [class.active]="isActive(isAdmin ? '/dashboard' : '/')">
+    <!-- Dashboard / Accueil -->
+    <a routerLink="/dashboard" class="nav-item" [class.active]="isActive('/dashboard')">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
         <path d="M8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 2 7.5V14a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-2a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v2a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5V7.5a.5.5 0 0 0-.146-.354z"/>
       </svg>
-      <span>{{ isAdmin ? t.t('sidebar.dashboard') : t.t('sidebar.home') }}</span>
+      <span>{{ t.t('sidebar.dashboard') }}</span>
     </a>
 
     <!-- Admin: Gestion -->
@@ -44,6 +44,28 @@
           <path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858"/>
         </svg>
         <span>{{ t.t('sidebar.reservations') }}</span>
+      </a>
+
+      <a routerLink="/borrow-book" class="nav-item" [class.active]="isActive('/borrow-book')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492z"/>
+        </svg>
+        <span>{{ t.t('sidebar.borrow') }}</span>
+      </a>
+
+      <a routerLink="/pending-borrows" class="nav-item" [class.active]="isActive('/pending-borrows')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm3.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
+        </svg>
+        <span>{{ t.t('sidebar.pending-borrows') }}</span>
+      </a>
+
+      <a routerLink="/return-book" class="nav-item" [class.active]="isActive('/return-book')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
+          <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2z"/>
+          <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966a.25.25 0 0 1 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466"/>
+        </svg>
+        <span>{{ t.t('sidebar.return') }}</span>
       </a>
     </ng-container>
 

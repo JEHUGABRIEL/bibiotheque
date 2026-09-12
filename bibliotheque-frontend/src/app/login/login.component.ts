@@ -5,6 +5,7 @@ import { UserAuthService } from '../_service/user-auth.service';
 import { UsersService } from '../_service/users.service';
 import { TranslationService } from '../_service/translation.service';
 import { ThemeService } from '../_service/theme.service';
+import { ToastService } from '../_service/toast.service';
 
 @Component({
   selector: 'app-login',
@@ -50,7 +51,8 @@ export class LoginComponent implements OnInit, OnDestroy {
     public themeService: ThemeService,
     private userService: UsersService,
     private userAuthService: UserAuthService,
-    private router: Router
+    private router: Router,
+    private toast: ToastService
   ) { }
 
   ngOnInit() {
@@ -83,13 +85,9 @@ export class LoginComponent implements OnInit, OnDestroy {
         this.userAuthService.setUserId(response.user.userId);
         this.userAuthService.setName(response.user.name);
 
-        const role = response.user.role[0].roleName;
-        // Les deux modèles de rôles : Admin (hérité) et BIBLIOTHECAIRE (Séance 4) = personnel
-        if (role === 'Admin' || role === 'BIBLIOTHECAIRE') {
-          this.router.navigate(['/dashboard']);
-        } else {
-          this.router.navigate(['/borrow-book']);
-        }
+        const userName = response.user.name || response.user.username;
+        this.toast.success('Bienvenue ' + userName + ' !');
+        this.router.navigate(['/dashboard']);
       },
       (error) => {
         this.loading = false;

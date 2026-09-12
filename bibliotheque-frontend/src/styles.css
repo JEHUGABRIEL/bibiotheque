@@ -5,6 +5,10 @@
    ============================================ */
 
 :root {
+  /* Rendu natif des popups (listes déroulantes <option>, date pickers) —
+     sans ça Chrome affiche les cartes d'options en blanc avec survol bleu. */
+  color-scheme: dark;
+
   --bg-primary: #0f1117;
   --bg-secondary: #1a1d27;
   --bg-card: #21242f;
@@ -43,6 +47,8 @@ body {
    ============================================ */
 
 body.light-theme {
+  color-scheme: light;
+
   --bg-primary: #f5f5f7;
   --bg-secondary: #eaeaef;
   --bg-card: #ffffff;
@@ -307,6 +313,83 @@ body.light-theme .modal-form .form-group label {
   color: var(--text-secondary);
 }
 .btn-action-outline:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+
+/* ============================================
+   SELECTS — charte graphique commune
+   Chevron SVG custom, hover/focus cohérents, options lisibles.
+   ============================================ */
+
+select.form-control,
+.modal-form .form-group select,
+.form-card select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237c4dff' viewBox='0 0 16 16'%3E%3Cpath d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  padding-right: 2.4rem;
+  cursor: pointer;
+}
+
+select.form-control:hover:not(:disabled),
+.modal-form .form-group select:hover,
+.form-card select:hover {
+  border-color: var(--accent-purple, #7c4dff);
+}
+
+select.form-control:focus,
+.modal-form .form-group select:focus,
+.form-card select:focus {
+  outline: none;
+  border-color: var(--accent-purple, #7c4dff);
+  box-shadow: 0 0 0 3px rgba(124, 77, 255, 0.14);
+}
+
+select.form-control option,
+.modal-form .form-group select option,
+.form-card select option {
+  background: var(--bg-card, #1b1d27);
+  color: var(--text-primary, #e8e9f0);
+}
+
+select.form-control:disabled,
+.modal-form .form-group select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Sélects sans classe (users-list, modales de gestion) — même traitement */
+.modal-form .form-group select,
+.form-card select {
+  width: 100%;
+}
+
+body.light-theme select.form-control option,
+body.light-theme .modal-form .form-group select option,
+body.light-theme .form-card select option {
+  background: #ffffff;
+  color: #1a1a2e;
+}
+
+/* Barre d'actions au-dessus des tableaux (filtre + boutons sur la même ligne) */
+.table-actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+/* Fichier de statut dans la barre d'actions (aligné sur la hauteur des boutons) */
+.table-actions-bar .statut-filter {
+  width: auto;
+  min-width: 180px;
+  height: 38px;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin: 0;
+}
 
 /* ============================================
    EMPTY STATE / ERROR STATE
@@ -759,6 +842,9 @@ body.light-theme .modal-form .form-group label {
 .action-btn-success { background: rgba(124, 77, 255, 0.12); color: #9b7dff; }
 .action-btn-success:hover { background: #7c4dff; color: #fff; }
 
+.action-btn-info { background: rgba(79, 109, 245, 0.14); color: #6d8bfa; }
+.action-btn-info:hover { background: #4f6df5; color: #fff; }
+
 /* ============================================
    RESPONSIVE — Tables
    ============================================ */
@@ -915,6 +1001,27 @@ body.light-theme .modal-form .form-group label {
 .form-hint-muted {
   color: var(--text-muted);
   font-weight: 400;
+}
+
+.hint-ok {
+  color: #2fbf71;
+}
+
+/* Lien d'action dans une ligne de formulaire (ex. « Le réserver ») */
+.btn-link-reserve {
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 0.35rem;
+  color: var(--accent-purple);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.btn-link-reserve:hover {
+  color: var(--accent-blue);
 }
 
 /* ============================================

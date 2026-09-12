@@ -179,6 +179,15 @@ export class ReservationContainerComponent implements OnInit {
     return !this.selectedBookId && !!this.bookQuery.trim();
   }
 
+  /** Bouton + titre de modale : « Nouvelle réservation » (staff) vs « demande » (adhérent). */
+  get addLabel(): string {
+    return this.t.t(this.isStaff ? 'reservations.add' : 'reservations.add.self');
+  }
+
+  get addTitleLabel(): string {
+    return this.t.t(this.isStaff ? 'reservations.add.title' : 'reservations.add.title.self');
+  }
+
   get createNewLabel(): string {
     return this.t.t('reservations.select.book.new').replace('{{ q }}', this.bookQuery.trim());
   }

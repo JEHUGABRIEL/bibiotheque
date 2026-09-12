@@ -29,7 +29,7 @@
 </app-reservation-list>
 
 <!-- Modal: Nouvelle réservation -->
-<app-modal [open]="showCreateModal" [title]="t.t('reservations.add.title')" iconColor="linear-gradient(135deg, #4f6df5, #7c4dff)" (close)="showCreateModal = false">
+<app-modal [open]="showCreateModal" [title]="addTitleLabel" iconColor="linear-gradient(135deg, #4f6df5, #7c4dff)" (close)="showCreateModal = false">
   <form (ngSubmit)="onSubmitReservation()" class="modal-form">
     <div class="form-group autocomplete">
       <label>Livre <span class="required-mark">*</span></label>
@@ -87,7 +87,7 @@
       <button type="submit" class="btn-action btn-action-primary"
               [disabled]="!isFormValid || formSubmitting || (isStaff && users.length === 0)">
         <span *ngIf="formSubmitting" class="spinner-sm"></span>
-        {{ formSubmitting ? '…' : t.t('reservations.add') }}
+        {{ formSubmitting ? '…' : (isStaff ? t.t('reservations.submit') : t.t('reservations.submit.self')) }}
       </button>
     </div>
   </form>

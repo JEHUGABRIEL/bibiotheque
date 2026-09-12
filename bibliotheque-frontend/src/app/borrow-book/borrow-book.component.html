@@ -280,7 +280,7 @@
       <button type="button" class="btn-action btn-action-outline" (click)="closeBorrowModal()">{{ t.t('btn.cancel') }}</button>
       <button type="submit" class="btn-action btn-action-primary" [disabled]="!isBorrowFormValid || formSubmitting">
         <span *ngIf="formSubmitting" class="spinner-sm"></span>
-        {{ formSubmitting ? '…' : (isStaff ? 'Valider l\'emprunt' : 'Envoyer la demande d\'emprunt') }}
+        {{ formSubmitting ? '…' : (isStaff ? 'Enregistrer l\'emprunt' : 'Envoyer la demande d\'emprunt') }}
       </button>
       <span *ngIf="!isStaff && quotaReached" class="status-badge status-expiree" style="align-self: center;">Quota atteint</span>
     </div>

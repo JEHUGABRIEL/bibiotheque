@@ -668,10 +668,14 @@ body.light-theme .form-card select option {
   color: #4dd68b;
 }
 
-.modal-form .form-actions {
+.form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
+}
+
+/* Dans un formulaire de modale : séparation visuelle en plus. */
+.modal-form .form-actions {
   margin-top: 1.25rem;
   padding-top: 1rem;
   border-top: 1px solid var(--border-color);

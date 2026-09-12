@@ -399,10 +399,10 @@ export class ReservationContainerComponent implements OnInit {
         const expiry = created?.dateExpiration
           ? ' — expire le ' + this.formatDate(created.dateExpiration)
           : '';
-        if (this.isStaff) {
-          this.toast.success('Réservation créée avec succès' + expiry);
-        } else {
+        if (created?.statut === 'DEMANDE') {
           this.toast.info('Votre demande de réservation a été envoyée. Le bibliothécaire doit l\'accepter.' + expiry);
+        } else {
+          this.toast.success('Réservation créée avec succès' + expiry);
         }
         this.loadReservations();
         this.showCreateModal = false;

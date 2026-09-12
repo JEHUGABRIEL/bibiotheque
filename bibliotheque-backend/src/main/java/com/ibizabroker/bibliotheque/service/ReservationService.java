@@ -37,11 +37,6 @@ public class ReservationService {
     // jamais du corps de la requête.
     // ------------------------------------------------------------------
 
-    private Users user(Integer userId) {
-        return usersRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("Adhérent avec l'id " + userId + " introuvable"));
-    }
-
     private Users resolveUser(String username) {
         return usersRepository.findByUsername(username)
                 .orElseThrow(() -> new NotFoundException("Utilisateur '" + username + "' introuvable"));
@@ -84,11 +79,18 @@ public class ReservationService {
     // ------------------------------------------------------------------
 
     public Reservation createFor(Reservation reservation, String username) {
-        Users user = resolveUser(username);
-        if (!isBibliothecaire(user)) {
-            reservation.setUserId(user.getUserId());
+        Users actor = resolveUser(username);
+        if (!isBibliothecaire(actor)) {
+            reservation.setUserId(actor.getUserId());
         }
-        return create(reservation);
+        // Le statut dépend de l'ACTEUR (token), pas de l'adhérent visé :
+        // une réservation enregistrée par le personnel est directement EN_ATTENTE.
+        return create(reservation, isBibliothecaire(actor));
+    }
+
+    /** Création par défaut (acteur adhérent) — délègue à create(reservation, false). */
+    public Reservation create(Reservation reservation) {
+        return create(reservation, false);
     }
 
     // ------------------------------------------------------------------
@@ -164,7 +166,7 @@ public class ReservationService {
                 });
     }
 
-    public Reservation create(Reservation reservation) {
+    private Reservation create(Reservation reservation, boolean byStaff) {
         Integer userId = reservation.getUserId();
 
         if (userId == null) {
@@ -203,9 +205,9 @@ public class ReservationService {
         }
 
         // L'adhérent soumet une DEMANDE (à accepter par le personnel) ;
-        // le personnel crée directement une réservation EN_ATTENTE.
-        reservation.setStatut(isBibliothecaire(user(reservation.getUserId()))
-                ? StatutReservation.EN_ATTENTE : StatutReservation.DEMANDE);
+        // une réservation créée par le personnel est directement EN_ATTENTE.
+        // Décision fondée sur l'ACTEUR authentifié (token), jamais sur l'adhérent visé.
+        reservation.setStatut(byStaff ? StatutReservation.EN_ATTENTE : StatutReservation.DEMANDE);
         reservation.setDateReservation(new Date());
 
         Calendar cal = Calendar.getInstance();

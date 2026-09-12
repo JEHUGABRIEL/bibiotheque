@@ -280,6 +280,29 @@ class ReservationSecurityIntegrationTest {
     // ------------------------------------------------------------------
 
     @Test
+    @DisplayName("Workflow : une réservation créée par le personnel pour un adhérent est directement EN_ATTENTE (pas une DEMANDE)")
+    void create_parStaffPourUnAdherent_statutDirectementEnAttente() throws Exception {
+        // Le staff (biblio, id 1) crée une réservation POUR l'adhérent alice (id 10)
+        when(usersRepository.findByUsername("biblio"))
+                .thenReturn(Optional.of(utilisateur("biblio", 1, "BIBLIOTHECAIRE")));
+        when(usersRepository.findById(10)).thenReturn(Optional.of(utilisateur("alice", 10, "ADHERENT")));
+        when(booksRepository.findById(3)).thenReturn(Optional.of(livre(3, "Dune", 0)));
+        when(reservationRepository.existsByBookIdAndStatutIn(eq(3), anyList())).thenReturn(false);
+        // Le quota est compté sur l'adhérent VISÉ (10), pas sur le staff
+        when(reservationRepository.countByUserIdAndStatutIn(eq(10), anyList())).thenReturn(0L);
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(post(ENDPOINT)
+                        .header("Authorization", "Bearer " + tokenPour("biblio"))
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"bookId\":3,\"userId\":10}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.userId").value(10))
+                .andExpect(jsonPath("$.statut").value("EN_ATTENTE"));
+    }
+
+    @Test
     @DisplayName("Workflow : un adhérent qui soumet une réservation crée une DEMANDE ; le staff l'accepte → EN_ATTENTE")
     void workflow_adherentCreeDemande_staffAccepte_versEnAttente() throws Exception {
         // 1. L'adhérent soumet → DEMANDE (201)

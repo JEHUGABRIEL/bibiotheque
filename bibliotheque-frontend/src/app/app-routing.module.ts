@@ -3,7 +3,6 @@ import { RouterModule, Routes } from '@angular/router';
 import { BookDetailsComponent } from './book-details/book-details.component';
 import { BooksListComponent } from './books-list/books-list.component';
 import { BorrowBookComponent } from './borrow-book/borrow-book.component';
-import { PendingBorrowsComponent } from './pending-borrows/pending-borrows.component';
 import { CreateBookComponent } from './create-book/create-book.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { ForbiddenComponent } from './forbidden/forbidden.component';
@@ -34,7 +33,6 @@ const routes: Routes = [
   {path: 'login', component: LoginComponent},
   {path: 'forbidden', component: ForbiddenComponent},
   {path: 'borrow-book', component: BorrowBookComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE','User','ADHERENT']}},
-  {path: 'pending-borrows', component: PendingBorrowsComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE']}},
   {path: 'return-book', component: ReturnBookComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE','User','ADHERENT']}},
   {path: 'reservations', component: ReservationContainerComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE','ADHERENT','User']}},
   {path: 'reservation-details/:id', component: ReservationDetailsComponent, canActivate:[AuthGuard], data:{roles:['Admin','BIBLIOTHECAIRE','ADHERENT','User']}}

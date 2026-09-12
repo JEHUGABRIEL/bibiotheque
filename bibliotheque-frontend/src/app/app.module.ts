@@ -24,7 +24,6 @@ import { AuthGuard } from './_auth/auth.guard';
 import { AuthInterceptor } from './_auth/auth.interceptor';
 import { ForbiddenComponent } from './forbidden/forbidden.component';
 import { BorrowBookComponent } from './borrow-book/borrow-book.component';
-import { PendingBorrowsComponent } from './pending-borrows/pending-borrows.component';
 import { ReturnBookComponent } from './return-book/return-book.component';
 import { ReservationContainerComponent } from './reservation-container/reservation-container.component';
 import { ReservationListComponent } from './reservation-list/reservation-list.component';
@@ -54,7 +53,6 @@ import { NotificationBellComponent } from './_shared/notification-bell.component
     HomeComponent,
     ForbiddenComponent,
     BorrowBookComponent,
-    PendingBorrowsComponent,
     ReturnBookComponent,
     ReservationContainerComponent,
     ReservationListComponent,

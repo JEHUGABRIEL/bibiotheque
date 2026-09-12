@@ -71,6 +71,42 @@ export class BorrowBookComponent implements OnInit {
     return Object.values(StatutBorrow);
   }
 
+  // ==================== Demandes d'emprunt (EN_ATTENTE) ====================
+  /** Section repliée par défaut — même logique que les demandes de réservation (filtre DEMANDE). */
+  showRequests = false;
+  requestsPage = 1;
+  requestsPageSize = 5;
+
+  /** Les demandes en attente de décision du personnel. */
+  get pendingRequests(): Borrow[] {
+    return this.allBorrows.filter(b => b.statut === StatutBorrow.EN_ATTENTE);
+  }
+
+  get paginatedRequests(): Borrow[] {
+    const page = Math.min(this.requestsPage, this.requestsTotalPages);
+    const start = (page - 1) * this.requestsPageSize;
+    return this.pendingRequests.slice(start, start + this.requestsPageSize);
+  }
+
+  get requestsTotalPages(): number {
+    return Math.max(1, Math.ceil(this.pendingRequests.length / this.requestsPageSize));
+  }
+
+  get requestsPageNumbers(): number[] {
+    return Array.from({ length: this.requestsTotalPages }, (_, i) => i + 1);
+  }
+
+  toggleRequests(): void {
+    this.showRequests = !this.showRequests;
+    this.requestsPage = 1;
+  }
+
+  goToRequestsPage(page: number): void {
+    if (page >= 1 && page <= this.requestsTotalPages) {
+      this.requestsPage = page;
+    }
+  }
+
   get paginatedBorrows(): Borrow[] {
     const start = (this.borrowPage - 1) * this.borrowPageSize;
     return this.filteredBorrows.slice(start, start + this.borrowPageSize);
@@ -88,11 +124,6 @@ export class BorrowBookComponent implements OnInit {
     if (page >= 1 && page <= this.borrowTotalPages) {
       this.borrowPage = page;
     }
-  }
-
-  /** « Voir toutes les demandes d'emprunt » : ouvre la page dédiée. */
-  goToPendingBorrows(): void {
-    this.router.navigate(['/pending-borrows']);
   }
 
   // Refus / suppression

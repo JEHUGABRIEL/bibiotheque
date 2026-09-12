@@ -65,7 +65,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let b of paginatedBorrows" class="row-clickable" (click)="openDetails(b)">
+        <tr *ngFor="let b of paginatedBorrows">
           <td><strong>{{ getUserName(b.userId) }}</strong></td>
           <td>{{ getBookNameFor(b.bookId) }}</td>
           <td>{{ b.issueDate ? (b.issueDate | date:'dd/MM/yyyy') : '—' }}</td>

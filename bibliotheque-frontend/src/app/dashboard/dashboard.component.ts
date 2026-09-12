@@ -230,7 +230,7 @@ export class DashboardComponent implements OnInit {
 
   getStatutLabelBorrow(statut: string): string {
     const labels: Record<string, string> = {
-      'EN_ATTENTE': 'En attente',
+      'EN_ATTENTE': 'Demande',
       'VALIDEE': 'Validé',
       'REFUSEE': 'Refusé',
       'EN_COURS': 'En cours',

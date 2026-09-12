@@ -39,7 +39,7 @@
              (input)="onBookQueryInput($event)"
              (keydown)="onBookSearchKeydown($event)"
              (blur)="onBookSearchBlur()">
-      <div class="autocomplete-list" *ngIf="showBookSuggestions && bookSuggestions.length > 0">
+      <div class="autocomplete-list" *ngIf="showBookSuggestions">
         <button type="button"
                 class="autocomplete-item"
                 *ngFor="let book of bookSuggestions; let i = index"

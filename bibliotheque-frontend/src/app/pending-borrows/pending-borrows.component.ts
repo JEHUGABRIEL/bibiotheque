@@ -225,7 +225,7 @@ export class PendingBorrowsComponent implements OnInit {
 
   getStatutLabel(statut: StatutBorrow): string {
     const labels: Record<string, string> = {
-      'EN_ATTENTE': 'En attente',
+      'EN_ATTENTE': 'Demande',
       'VALIDEE': 'Validée',
       'REFUSEE': 'Refusée',
       'EN_COURS': 'En cours',

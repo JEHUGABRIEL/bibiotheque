@@ -4,6 +4,7 @@ import { Borrow, StatutBorrow } from '../_model/borrow';
 import { Reservation, StatutReservation } from '../_model/reservation';
 import { BorrowService } from './borrow.service';
 import { ReservationService } from './reservation.service';
+import { BooksService } from './books.service';
 import { UserAuthService } from './user-auth.service';
 import { UsersService } from './users.service';
 
@@ -52,6 +53,8 @@ const MAX_DISMISSED = 200;
 export class NotificationService {
 
   private static readonly STORAGE_KEY = 'bibliotheque.notifRead';
+  /** Annulations faites PAR l'adhérent lui-même — pour ne pas les afficher comme « refusées ». */
+  private static readonly SELF_CANCEL_KEY = 'bibliotheque.notifSelfCancel';
 
   private notifications$ = new BehaviorSubject<AppNotification[]>([]);
   private refreshTimer: any = null;
@@ -60,15 +63,59 @@ export class NotificationService {
   private dismissed = new Set<string>();
   private stateUserId: number | null = null;
   private markAllOnOpen = false;
+  /** Clés « res-<id> » annulées par l'adhérent lui-même (persitées par compte). */
+  private selfCancelled = new Set<string>();
+  /** Noms de livres pour des notifications lisibles (titre au lieu de « Livre #id »). */
+  private bookNames = new Map<number, string>();
 
   readonly notifications = this.notifications$.asObservable();
 
   constructor(
     private borrowService: BorrowService,
     private reservationService: ReservationService,
+    private booksService: BooksService,
     private userAuthService: UserAuthService,
     private usersService: UsersService
   ) {}
+
+  /** À appeler quand l'adhérent annule LUI-MÊME une réservation (pas un refus staff). */
+  markSelfCancelled(key: string): void {
+    this.selfCancelled.add(key);
+    this.persistSelfCancelled();
+  }
+
+  private persistSelfCancelled(): void {
+    const userId = this.stateUserId;
+    if (userId == null) return;
+    try {
+      const raw = localStorage.getItem(NotificationService.SELF_CANCEL_KEY);
+      const all: Record<string, string[]> = raw ? JSON.parse(raw) : {};
+      all[String(userId)] = Array.from(this.selfCancelled).slice(-MAX_DISMISSED);
+      localStorage.setItem(NotificationService.SELF_CANCEL_KEY, JSON.stringify(all));
+    } catch {
+      // localStorage indisponible : dégradation silencieuse.
+    }
+  }
+
+  private loadSelfCancelledFor(userId: number | null): void {
+    this.selfCancelled = new Set();
+    if (userId == null) return;
+    try {
+      const raw = localStorage.getItem(NotificationService.SELF_CANCEL_KEY);
+      const all: Record<string, string[]> = raw ? JSON.parse(raw) : {};
+      const ids = all[String(userId)];
+      if (Array.isArray(ids)) {
+        this.selfCancelled = new Set(ids);
+      }
+    } catch {
+      // JSON corrompu : on repart de zéro.
+    }
+  }
+
+  private bookName(bookId: number | undefined): string {
+    if (bookId === null || bookId === undefined) return 'un livre';
+    return this.bookNames.get(bookId) || 'Livre #' + bookId;
+  }
 
   /** Nombre de notifications NON LUES (badge de la cloche). */
   get unreadCount(): number {
@@ -129,6 +176,7 @@ export class NotificationService {
    */
   refresh(): void {
     this.loadStateFor(this.userAuthService.getUserId());
+    this.loadSelfCancelledFor(this.userAuthService.getUserId());
     if (this.usersService.isStaff()) {
       this.refreshForStaff();
     } else {
@@ -228,7 +276,28 @@ export class NotificationService {
   // Personnel : demandes en attente + échéances
   // ------------------------------------------------------------------
 
+  /** Charge les noms de livres une fois (session), puis construit les notifications. */
+  private withBookNames(next: (names: Map<number, string>) => void): void {
+    if (this.bookNames.size > 0) {
+      next(this.bookNames);
+      return;
+    }
+    this.booksService.getBooksList().subscribe({
+      next: (books) => {
+        books.forEach(b => this.bookNames.set(b.bookId, b.bookName));
+        next(this.bookNames);
+      },
+      error: () => next(this.bookNames) // dégradé : « Livre #id » à la place
+    });
+  }
+
   private refreshForStaff(): void {
+    this.withBookNames(names => {
+      this.loadStaffPending(names);
+    });
+  }
+
+  private loadStaffPending(names: Map<number, string>): void {
     const list: AppNotification[] = [];
 
     this.borrowService.getPendingBorrows().subscribe({
@@ -237,16 +306,16 @@ export class NotificationService {
           id: 'borrow-pending-' + b.borrowId,
           icon: 'borrow',
           title: 'Demande d\'emprunt',
-          detail: `Utilisateur #${b.userId} demande le livre #${b.bookId}`,
-          date: b.dueDate ? this.fmt(b.dueDate) : undefined
+          detail: `Emprunt de « ${names.get(b.bookId) || 'Livre #' + b.bookId} » à traiter`,
+          date: b.issueDate ? this.fmt(b.issueDate) : undefined
         }));
-        this.loadStaffReservations(list);
+        this.loadStaffReservations(list, names);
       },
-      error: () => this.loadStaffReservations(list)
+      error: () => this.loadStaffReservations(list, names)
     });
   }
 
-  private loadStaffReservations(list: AppNotification[]): void {
+  private loadStaffReservations(list: AppNotification[], names: Map<number, string>): void {
     this.reservationService.getAll().subscribe({
       next: (reservations) => {
         reservations
@@ -255,8 +324,8 @@ export class NotificationService {
             id: 'res-demand-' + r.id,
             icon: 'reservation',
             title: 'Demande de réservation à traiter',
-            detail: `Livre #${r.bookId} — adhérent #${r.userId}`,
-            date: r.dateExpiration ? this.fmt(r.dateExpiration) : undefined,
+            detail: `« ${names.get(r.bookId) || 'Livre #' + r.bookId} » — adhérent #${r.userId}`,
+            date: r.dateReservation ? this.fmt(r.dateReservation) : undefined,
             urgent: true
           }));
         reservations
@@ -265,16 +334,16 @@ export class NotificationService {
             id: 'res-pending-' + r.id,
             icon: 'reservation',
             title: 'Réservation en attente',
-            detail: `Livre #${r.bookId} — adhérent #${r.userId}`,
+            detail: `« ${names.get(r.bookId) || 'Livre #' + r.bookId} » — adhérent #${r.userId}`,
             date: r.dateExpiration ? this.fmt(r.dateExpiration) : undefined
           }));
-        this.loadStaffDueSoon(list);
+        this.loadStaffDueSoon(list, names);
       },
-      error: () => this.loadStaffDueSoon(list)
+      error: () => this.loadStaffDueSoon(list, names)
     });
   }
 
-  private loadStaffDueSoon(list: AppNotification[]): void {
+  private loadStaffDueSoon(list: AppNotification[], names: Map<number, string>): void {
     this.borrowService.getBorrowList().subscribe({
       next: (borrows) => {
         const soon = Date.now() + 48 * 3600 * 1000;
@@ -287,7 +356,7 @@ export class NotificationService {
                 id: 'borrow-late-' + b.borrowId,
                 icon: 'due',
                 title: 'Emprunt en retard',
-                detail: `Livre #${b.bookId} — utilisateur #${b.userId}`,
+                detail: `« ${names.get(b.bookId) || 'Livre #' + b.bookId} » — utilisateur #${b.userId}`,
                 date: this.fmt(b.dueDate),
                 urgent: true
               });
@@ -296,7 +365,7 @@ export class NotificationService {
                 id: 'borrow-due-' + b.borrowId,
                 icon: 'due',
                 title: 'Retour attendu sous 48h',
-                detail: `Livre #${b.bookId} — utilisateur #${b.userId}`,
+                detail: `« ${names.get(b.bookId) || 'Livre #' + b.bookId} » — utilisateur #${b.userId}`,
                 date: this.fmt(b.dueDate)
               });
             }
@@ -318,6 +387,12 @@ export class NotificationService {
       this.set([]);
       return;
     }
+    this.withBookNames(() => {
+      this.loadMemberBorrows(userId);
+    });
+  }
+
+  private loadMemberBorrows(userId: number): void {
     const list: AppNotification[] = [];
 
     this.borrowService.getBooksBorrowedByUser(userId).subscribe({
@@ -327,24 +402,24 @@ export class NotificationService {
             list.push({
               id: 'my-borrow-' + b.borrowId,
               icon: 'borrow',
-              title: 'Emprunt confirmé',
-              detail: `Livre #${b.bookId} confirmé`,
+              title: 'Demande d\'emprunt confirmée',
+              detail: `« ${this.bookName(b.bookId)} » accepté — à rendre le ${b.dueDate ? this.fmt(b.dueDate) : '—'}`,
               date: b.dueDate ? this.fmt(b.dueDate) : undefined
             });
           } else if (b.statut === StatutBorrow.EN_ATTENTE) {
             list.push({
               id: 'my-borrow-pending-' + b.borrowId,
               icon: 'borrow',
-              title: 'Demande d\'emprunt en cours',
-              detail: `Livre #${b.bookId} en attente de validation`,
+              title: 'Demande d\'emprunt envoyée',
+              detail: `« ${this.bookName(b.bookId)} » — en attente de décision du bibliothécaire`,
               date: b.issueDate ? this.fmt(b.issueDate) : undefined
             });
           } else if (b.statut === StatutBorrow.REFUSEE) {
             list.push({
               id: 'my-borrow-refused-' + b.borrowId,
               icon: 'borrow',
-              title: 'Demande refusée',
-              detail: `Livre #${b.bookId} refusé par le bibliothécaire`,
+              title: 'Demande d\'emprunt refusée',
+              detail: `« ${this.bookName(b.bookId)} » a été refusé par le bibliothécaire`,
               date: b.returnDate ? this.fmt(b.returnDate) : undefined
             });
           }
@@ -361,32 +436,47 @@ export class NotificationService {
         reservations
           .filter(r => r.userId === userId && (r.statut === StatutReservation.DEMANDE || r.statut === StatutReservation.EN_ATTENTE || r.statut === StatutReservation.DISPONIBLE))
           .forEach(r => {
+            const label = this.bookName(r.bookId);
             if (r.statut === StatutReservation.DEMANDE) {
               list.push({
                 id: 'my-res-demand-' + r.id,
                 icon: 'reservation',
                 title: 'Demande de réservation envoyée',
-                detail: `Livre #${r.bookId} — en attente d'acceptation`,
-                date: r.dateExpiration ? this.fmt(r.dateExpiration) : undefined
+                detail: `« ${label} » — en attente d'acceptation par le bibliothécaire`,
+                date: r.dateReservation ? this.fmt(r.dateReservation) : undefined
               });
             } else if (r.statut === StatutReservation.DISPONIBLE) {
               list.push({
                 id: 'my-res-available-' + r.id,
                 icon: 'reservation',
                 title: 'Livre réservé disponible',
-                detail: `Livre #${r.bookId} vous attend`,
+                detail: `« ${label} » vous attend`,
                 date: r.dateExpiration ? this.fmt(r.dateExpiration) : undefined,
                 urgent: true
               });
             } else {
               list.push({
                 id: 'my-res-pending-' + r.id,
-                title: 'Réservation en attente',
+                title: 'Réservation acceptée',
                 icon: 'reservation',
-                detail: `Livre #${r.bookId}`,
+                detail: `« ${label} » est réservé pour vous`,
                 date: r.dateExpiration ? this.fmt(r.dateExpiration) : undefined
               } as AppNotification);
             }
+          });
+        reservations
+          .filter(r => r.userId === userId && r.statut === StatutReservation.ANNULEE)
+          .forEach(r => {
+            const key = 'res-' + r.id;
+            // Annulée PAR l'adhérent lui-même : pas une « réponse », on n'affiche pas.
+            if (this.selfCancelled.has(key)) return;
+            list.push({
+              id: 'my-res-refused-' + r.id,
+              icon: 'reservation',
+              title: 'Demande de réservation refusée',
+              detail: `« ${this.bookName(r.bookId)} » a été refusée par le bibliothécaire`,
+              date: r.dateReservation ? this.fmt(r.dateReservation) : undefined
+            });
           });
         this.pruneDismissed(new Set(list.map(n => n.id)));
         this.set(list);

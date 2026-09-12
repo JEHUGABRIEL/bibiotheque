@@ -9,6 +9,7 @@ import { UsersService } from '../_service/users.service';
 import { UserAuthService } from '../_service/user-auth.service';
 import { TranslationService } from '../_service/translation.service';
 import { ToastService } from '../_service/toast.service';
+import { NotificationService } from '../_service/notification.service';
 
 @Component({
   selector: 'app-reservation-container',
@@ -63,7 +64,8 @@ export class ReservationContainerComponent implements OnInit {
     private userAuthService: UserAuthService,
     private route: ActivatedRoute,
     public t: TranslationService,
-    private toast: ToastService
+    private toast: ToastService,
+    private notifications: NotificationService
   ) { }
 
   /** Le personnel (BIBLIOTHECAIRE / Admin) peut réserver pour n'importe quel adhérent. */
@@ -470,6 +472,10 @@ export class ReservationContainerComponent implements OnInit {
 
     this.reservationService.annuler(id).subscribe({
       next: (updated) => {
+        // Annulation faite PAR l'adhérent : la cloche ne doit pas la compter comme un refus.
+        if (!this.isStaff) {
+          this.notifications.markSelfCancelled('res-' + id);
+        }
         const index = this.reservations.findIndex(r => r.id === updated.id);
         if (index >= 0) {
           this.reservations[index] = updated;

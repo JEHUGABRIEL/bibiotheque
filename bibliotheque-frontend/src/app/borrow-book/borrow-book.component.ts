@@ -18,7 +18,6 @@ import { ToastService } from '../_service/toast.service';
 })
 export class BorrowBookComponent implements OnInit {
 
-  books: Books[] = [];
   /** Catalogue complet (y compris 0 exemplaire) pour la recherche prédictive. */
   allBooks: Books[] = [];
   loading = false;
@@ -190,7 +189,7 @@ export class BorrowBookComponent implements OnInit {
   /** Applique le pré-remplissage du livre une fois le catalogue chargé. */
   private applyBookPrefill() {
     if (this.bookIdToPrefill === null) return;
-    const book = this.books.find(x => x.bookId === this.bookIdToPrefill);
+    const book = this.allBooks.find(x => x.bookId === this.bookIdToPrefill);
     if (!book) return; // catalogue pas encore chargé : retenté après getBooks()
     this.openBorrowModal();
     this.modalSelectedBookId = book.bookId;
@@ -242,7 +241,7 @@ export class BorrowBookComponent implements OnInit {
     return book ? (book.noOfCopies ?? 0) : 0;
   }
 
-  // ==================== Recherche prédictive du livre (adhérent) ====================
+  // ==================== Recherche prédictive du livre (staff et adhérent) ====================
 
   private normalize(value: string): string {
     return (value || '')
@@ -263,14 +262,14 @@ export class BorrowBookComponent implements OnInit {
 
   /** Livre sélectionné mais sans exemplaire → proposer la réservation. */
   get unavailableBook(): Books | null {
-    if (this.isStaff || this.modalSelectedBookId === null) return null;
+    if (this.modalSelectedBookId === null) return null;
     const book = this.allBooks.find(b => b.bookId === this.modalSelectedBookId);
     return book && (book.noOfCopies ?? 0) <= 0 ? book : null;
   }
 
   /** Texte tapé ne correspondant à aucun livre du catalogue. */
   get unknownBookQuery(): string | null {
-    if (this.isStaff || this.modalSelectedBookId !== null) return null;
+    if (this.modalSelectedBookId !== null) return null;
     const q = this.adherentBookQuery.trim();
     return q.length > 0 && this.adherentSuggestions.length === 0 ? q : null;
   }
@@ -395,7 +394,6 @@ export class BorrowBookComponent implements OnInit {
     this.booksService.getBooksList().subscribe({
       next: (data) => {
         this.allBooks = data;
-        this.books = data.filter(b => b.noOfCopies > 0);
         data.forEach(b => this.bookNames.set(b.bookId, b.bookName));
         this.loading = false;
         this.applyBookPrefill();

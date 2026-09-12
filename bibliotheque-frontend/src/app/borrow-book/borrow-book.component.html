@@ -235,20 +235,10 @@
       <div class="form-hint form-hint-muted">Le personnel peut emprunter pour n'importe quel adhérent.</div>
     </div>
 
-    <div class="form-group" *ngIf="isStaff">
+    <!-- Recherche prédictive du livre (staff et adhérent) -->
+    <div class="form-group autocomplete">
       <label>Livre <span class="required-mark">*</span></label>
-      <select [(ngModel)]="modalSelectedBookId" name="borrowBookId" required>
-        <option [ngValue]="null" disabled>Sélectionner un livre…</option>
-        <option *ngFor="let book of books" [ngValue]="book.bookId" [disabled]="book.noOfCopies < 1">
-          {{ book.bookName }} — {{ book.noOfCopies }} exemplaire(s)
-        </option>
-      </select>
-    </div>
-
-    <!-- Adhérent : recherche prédictive du livre -->
-    <div class="form-group autocomplete" *ngIf="!isStaff">
-      <label>Livre <span class="required-mark">*</span></label>
-      <input type="text" class="form-control" name="adherentBookQuery" autocomplete="off"
+      <input type="text" class="form-control" name="borrowBookQuery" autocomplete="off"
              placeholder="Tapez le nom du livre…"
              [value]="adherentBookQuery"
              (input)="onAdherentBookInput($event)"

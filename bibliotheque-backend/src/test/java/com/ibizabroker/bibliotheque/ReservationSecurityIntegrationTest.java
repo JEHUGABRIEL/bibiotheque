@@ -250,6 +250,32 @@ class ReservationSecurityIntegrationTest {
     }
 
     // ------------------------------------------------------------------
+    // RS-04 — L'identité vient du token, pas du corps de la requête
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("RS-04 : un ADHERENT qui met le userId d'un autre dans le corps se voit attribuer SON propre id (token)")
+    void create_adherentAvecUserIdDUnAutreDansLeCorps_identitePriseDuToken() throws Exception {
+        // alice (id 10) tente de créer une réservation POUR l'adhérent 77 en trichant sur le corps
+        when(usersRepository.findByUsername("alice"))
+                .thenReturn(Optional.of(utilisateur("alice", 10, "ADHERENT")));
+        when(usersRepository.findById(10)).thenReturn(Optional.of(utilisateur("alice", 10, "ADHERENT")));
+        when(booksRepository.findById(3)).thenReturn(Optional.of(livre(3, "Dune", 0)));
+        when(reservationRepository.existsByBookIdAndStatutIn(eq(3), anyList())).thenReturn(false);
+        // Le quota est compté sur l'id du TOKEN (10) — la preuve que le corps a été ignoré
+        when(reservationRepository.countByUserIdAndStatutIn(eq(10), anyList())).thenReturn(0L);
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(post(ENDPOINT)
+                        .header("Authorization", "Bearer " + tokenPour("alice"))
+                        .contentType(APPLICATION_JSON)
+                        .content("{\"bookId\":3,\"userId\":77}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.userId").value(10));
+    }
+
+    // ------------------------------------------------------------------
     // Workflow DEMANDE → acceptation par le personnel
     // ------------------------------------------------------------------
 

@@ -6,7 +6,7 @@
   </div>
   <div>
     <h2>{{ t.t('borrow.title') }}</h2>
-    <p>{{ isStaff ? t.t('borrow.subtitle') : 'Soumettre une demande d\'emprunt — le bibliothécaire l\'acceptera ou la refusera' }}</p>
+    <p>{{ t.t('borrow.subtitle') }}</p>
   </div>
 </div>
 
@@ -24,29 +24,6 @@
       <span *ngIf="quotaReached" class="quota-full-text"> — Quota atteint</span>
     </span>
   </div>
-</div>
-
-<!-- Actions au-dessus du tableau : filtre + boutons sur la même ligne -->
-<div class="table-actions-bar">
-  <select *ngIf="isAdmin && allBorrows.length > 0" class="form-control statut-filter"
-          [ngModel]="statutFilter" (ngModelChange)="statutFilter = $event; onStatutFilterChange()" name="statutFilter">
-    <option [ngValue]="null">Tous les emprunts</option>
-    <option *ngFor="let s of statuts" [ngValue]="s">{{ getStatutLabel(s) }}</option>
-  </select>
-  <div style="flex: 1;"></div>
-  <button class="btn-action btn-action-outline" *ngIf="isStaff" (click)="toggleRequests()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-      <path d="M2 2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2zm3.5 1a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1zm0 2.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1z"/>
-    </svg>
-    {{ showRequests ? 'Masquer les demandes' : "Voir toutes les demandes d'emprunt" }}
-  </button>
-  <button class="btn-action btn-action-primary" (click)="openBorrowModal()">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-      <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
-      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
-    </svg>
-    Nouvel emprunt
-  </button>
 </div>
 
 <!-- Tableau unique des emprunts (Admin) : demandes + emprunts, toutes actions -->
@@ -120,67 +97,37 @@
   </div>
 </div>
 
-<!-- Demandes d'emprunt (EN_ATTENTE) — repliée par défaut, même logique que les demandes de réservation -->
-<div *ngIf="isStaff && showRequests" class="pending-section">
-  <div class="table-responsive">
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Adhérent</th>
-          <th>Livre</th>
-          <th>Date de demande</th>
-          <th>Statut</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let r of paginatedRequests">
-          <td><strong>{{ getUserName(r.userId) }}</strong></td>
-          <td>{{ getBookNameFor(r.bookId) }}</td>
-          <td>{{ r.issueDate ? (r.issueDate | date:'dd/MM/yyyy') : '—' }}</td>
-          <td><span [class]="getStatutClass(r.statut)">{{ getStatutLabel(r.statut) }}</span></td>
-          <td class="actions-cell">
-            <button (click)="openDetails(r)" class="action-btn action-btn-primary" title="Voir les détails">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.133 13.133 0 0 1 1.172 8"/>
-                <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
-              </svg>
-            </button>
-            <button (click)="openValidateConfirm(r)" class="action-btn action-btn-success" title="Valider">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
-              </svg>
-            </button>
-            <button (click)="openRefuseConfirm(r)" class="action-btn action-btn-danger" title="Refuser">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708z"/>
-              </svg>
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Empty state si aucune demande -->
-  <div *ngIf="pendingRequests.length === 0" class="detail-empty" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-    Aucune demande d'emprunt en attente
-  </div>
-
-  <!-- Pagination (demandes) -->
-  <div class="table-footer" *ngIf="pendingRequests.length > 0">
-    <div class="pagination">
-      <button class="nav-btn" (click)="goToRequestsPage(requestsPage - 1)" [disabled]="requestsPage === 1">{{ t.t('pagination.prev') }}</button>
-      <button *ngFor="let p of requestsPageNumbers" class="page-btn" (click)="goToRequestsPage(p)" [class.active]="p === requestsPage">{{ p }}</button>
-      <button class="nav-btn" (click)="goToRequestsPage(requestsPage + 1)" [disabled]="requestsPage === requestsTotalPages">{{ t.t('pagination.next') }}</button>
-    </div>
-  </div>
-</div>
 
 <!-- Chargement -->
 <div *ngIf="loading" class="loading-state">
   <div class="spinner"></div>
   <p>{{ t.t('loading.text') }}</p>
+</div>
+
+<!-- Empty : aucun emprunt (même présentation que la page des retours) -->
+<div *ngIf="!loading && allBorrows.length === 0" class="empty-state">
+  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" viewBox="0 0 16 16">
+    <path d="M1 2.828c.885-.37 2.154-.769 3.388-.893 1.33-.134 2.458.063 3.112.752v9.746c-.935-.53-2.12-.603-3.213-.493-1.18.12-2.37.461-3.287.811zm7.5-.141c.654-.689 1.782-.886 3.112-.752 1.234.124 2.503.523 3.388.893v9.923c-.918-.35-2.107-.692-3.287-.81-1.094-.111-2.278-.039-3.213.492z"/>
+  </svg>
+  <h3>Aucun emprunt en cours</h3>
+  <p>Vous n'avez aucun livre à retourner.</p>
+</div>
+
+<!-- Actions au-dessus du tableau : filtre + boutons sur la même ligne (centrés si la liste est vide) -->
+<div class="table-actions-bar" [style.justifyContent]="(!loading && allBorrows.length > 0) ? null : 'center'">
+  <select *ngIf="isAdmin && allBorrows.length > 0" class="form-control statut-filter"
+          [ngModel]="statutFilter" (ngModelChange)="statutFilter = $event; onStatutFilterChange()" name="statutFilter">
+    <option [ngValue]="null">Tous les emprunts</option>
+    <option *ngFor="let s of statuts" [ngValue]="s">{{ getStatutLabel(s) }}</option>
+  </select>
+  <div style="flex: 1;" *ngIf="allBorrows.length > 0"></div>
+  <button class="btn-action btn-action-primary" (click)="openBorrowModal()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+      <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
+      <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+    </svg>
+    Nouvel emprunt
+  </button>
 </div>
 
 <!-- Modal confirmation suppression simple (emprunt rendu/refusé — pas de saisie requise) -->

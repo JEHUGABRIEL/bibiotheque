@@ -30,6 +30,7 @@ public class AdminController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @PreAuthorize("hasRole('Admin')")
     @PostMapping("/users")
     public ResponseEntity<?> addUserByAdmin(@RequestBody Users user) {
         if (user.getName() == null || user.getName().trim().isEmpty()) {

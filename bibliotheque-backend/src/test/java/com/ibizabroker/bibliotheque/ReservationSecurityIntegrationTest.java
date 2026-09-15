@@ -16,32 +16,48 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.server.PathContainer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Tests d'intégration de la sécurité sur GET /api/reservations et GET /api/reservations/{id}.
+ * Tests d'intégration de la sécurité sur /api/reservations : les six endpoints
+ * (POST, GET, GET/{id}, PATCH/{id}/annuler, PATCH/{id}/accepter, DELETE/{id}).
  *
  * Le contexte Spring démarre entièrement : filtre JWT réel + SecurityConfig + @PreAuthorize.
  * Couvre aussi RG-01 : seule la réservation d'un livre INDISPONIBLE (0 exemplaire) est acceptée.
@@ -62,6 +78,9 @@ class ReservationSecurityIntegrationTest {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    @Autowired
+    private RequestMappingHandlerMapping handlerMapping;
 
     @MockBean
     private ReservationRepository reservationRepository;
@@ -98,11 +117,15 @@ class ReservationSecurityIntegrationTest {
     }
 
     private Reservation reservationDe(Integer userId, long id) {
+        return reservationDe(userId, id, StatutReservation.EN_ATTENTE);
+    }
+
+    private Reservation reservationDe(Integer userId, long id, StatutReservation statut) {
         Reservation reservation = new Reservation();
         reservation.setId(id);
         reservation.setBookId(9);
         reservation.setUserId(userId);
-        reservation.setStatut(StatutReservation.EN_ATTENTE);
+        reservation.setStatut(statut);
         return reservation;
     }
 
@@ -143,6 +166,60 @@ class ReservationSecurityIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
+    /**
+     * RS-01 dans son énoncé littéral : « sans token, TOUT endpoint de réservation renvoie 401 ».
+     * Un test par endpoint laisserait la porte ouverte à un oubli le jour où un endpoint est
+     * ajouté : cette source est donc la liste exhaustive des routes de ReservationController.
+     */
+    @ParameterizedTest(name = "{0} {1} — {2}")
+    @DisplayName("RS-01 : sans token, les six endpoints de réservation renvoient 401")
+    @MethodSource("endpointsDeReservation")
+    void tousLesEndpoints_sansToken_renvoient401(String methode, String chemin, String description)
+            throws Exception {
+        // Garde-fou indispensable : une route INEXISTANTE répond elle aussi 401 (la sécurité
+        // tranche avant que le DispatcherServlet ne cherche un handler). Sans cette vérification,
+        // une faute de frappe dans un chemin rendrait le cas « vert » pour la mauvaise raison.
+        assertTrue(routeExiste(methode, ENDPOINT + chemin), () -> "Aucun mapping " + methode + " "
+                + ENDPOINT + chemin + " dans ReservationController — le 401 attendu serait un faux positif");
+
+        MockHttpServletRequestBuilder requete =
+                MockMvcRequestBuilders.request(HttpMethod.valueOf(methode), ENDPOINT + chemin);
+        // Un corps n'a de sens que pour les méthodes qui en portent un ; la sécurité
+        // doit de toute façon refuser AVANT que le contrôleur ne lise quoi que ce soit.
+        if (!"GET".equals(methode)) {
+            requete = requete.contentType(APPLICATION_JSON).content("{}");
+        }
+
+        mockMvc.perform(requete)
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value("Authentification requise"));
+    }
+
+    /** Les six routes exposées par ReservationController (RS-01 est une exigence par endpoint). */
+    static Stream<Arguments> endpointsDeReservation() {
+        return Stream.of(
+                arguments("POST", "", "créer une réservation"),
+                arguments("GET", "", "lister les réservations"),
+                arguments("GET", "/99", "lire une réservation"),
+                arguments("PATCH", "/99/annuler", "annuler une réservation"),
+                arguments("PATCH", "/99/accepter", "accepter une demande de réservation"),
+                arguments("DELETE", "/99", "supprimer une réservation"));
+    }
+
+    /**
+     * Vrai si un handler déclaré correspond à ce couple méthode/chemin concret
+     * (les chemins du contrôleur sont des motifs : « /api/reservations/{id} »).
+     */
+    private boolean routeExiste(String methode, String cheminConcret) {
+        PathContainer chemin = PathContainer.parsePath(cheminConcret);
+        RequestMethod methodeAttendue = RequestMethod.valueOf(methode);
+        return handlerMapping.getHandlerMethods().keySet().stream()
+                .anyMatch(info -> info.getPathPatternsCondition() != null
+                        && info.getPathPatternsCondition().getPatterns().stream()
+                                .anyMatch(motif -> motif.matches(chemin))
+                        && info.getMethodsCondition().getMethods().contains(methodeAttendue));
+    }
+
     // ------------------------------------------------------------------
     // RS-05 — Un ADHERENT ne voit que SES réservations
     // ------------------------------------------------------------------
@@ -157,6 +234,51 @@ class ReservationSecurityIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].userId").value(10));
+    }
+
+    /**
+     * RS-05 sur le chemin FILTRÉ : c'est là que la fuite est la plus facile à introduire,
+     * parce que la méthode « toutes les réservations d'un statut » existe et est légitime
+     * pour le personnel. Le second stub est donc une CHARGE PIÉGÉE : il contient la ligne de
+     * l'adhérent 77. Si le service appelait findByStatut au lieu de findByUserIdAndStatut,
+     * la réponse servirait cette ligne et le test échouerait.
+     */
+    @Test
+    @DisplayName("RS-05 : avec ?statut=, un ADHERENT est filtré sur SON id et ne voit pas les autres adhérents")
+    void getByStatut_adherent_neVoitQueSesPropresReservations() throws Exception {
+        when(usersRepository.findByUsername("alice")).thenReturn(Optional.of(utilisateur("alice", 10, "ADHERENT")));
+        when(reservationRepository.findByStatut(StatutReservation.DEMANDE))
+                .thenReturn(List.of(reservationDe(10, 1L, StatutReservation.DEMANDE),
+                        reservationDe(77, 2L, StatutReservation.DEMANDE)));
+        when(reservationRepository.findByUserIdAndStatut(10, StatutReservation.DEMANDE))
+                .thenReturn(List.of(reservationDe(10, 1L, StatutReservation.DEMANDE)));
+
+        mockMvc.perform(get(ENDPOINT).param("statut", "DEMANDE")
+                        .header("Authorization", "Bearer " + tokenPour("alice")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].userId").value(10));
+
+        verify(reservationRepository).findByUserIdAndStatut(10, StatutReservation.DEMANDE);
+        verify(reservationRepository, never()).findByStatut(any());
+    }
+
+    @Test
+    @DisplayName("RS-05 (contre-épreuve) : avec ?statut=, le BIBLIOTHECAIRE voit TOUTES les réservations du statut")
+    void getByStatut_bibliothecaire_voitToutesLesReservationsDuStatut() throws Exception {
+        when(usersRepository.findByUsername("biblio"))
+                .thenReturn(Optional.of(utilisateur("biblio", 1, "BIBLIOTHECAIRE")));
+        when(reservationRepository.findByStatut(StatutReservation.DEMANDE))
+                .thenReturn(List.of(reservationDe(10, 1L, StatutReservation.DEMANDE),
+                        reservationDe(77, 2L, StatutReservation.DEMANDE)));
+
+        mockMvc.perform(get(ENDPOINT).param("statut", "DEMANDE")
+                        .header("Authorization", "Bearer " + tokenPour("biblio")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)));
+
+        verify(reservationRepository).findByStatut(StatutReservation.DEMANDE);
+        verify(reservationRepository, never()).findByUserIdAndStatut(any(), any());
     }
 
     // ------------------------------------------------------------------
@@ -185,6 +307,59 @@ class ReservationSecurityIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(77));
     }
+
+    // ------------------------------------------------------------------
+    // RS-03 — Annulation : la même règle de propriété que la lecture
+    // ------------------------------------------------------------------
+
+    @Test
+    @DisplayName("RS-03 : un ADHERENT qui annule la réservation d'un autre reçoit 403")
+    void annuler_reservationDUnAutreAdherent_renvoie403() throws Exception {
+        when(usersRepository.findByUsername("alice")).thenReturn(Optional.of(utilisateur("alice", 10, "ADHERENT")));
+        when(reservationRepository.findById(99L)).thenReturn(Optional.of(reservationDe(77, 99L)));
+
+        mockMvc.perform(patch(ENDPOINT + "/99/annuler")
+                        .header("Authorization", "Bearer " + tokenPour("alice")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("La réservation 99 n'appartient pas à l'adhérent 'alice'"));
+    }
+
+    @Test
+    @DisplayName("RS-03 (contre-épreuve) : un ADHERENT annule SA réservation → 200 et statut ANNULEE")
+    void annuler_saPropreReservation_renvoie200EtStatutAnnulee() throws Exception {
+        // Sans ce cas, le 403 ci-dessus pourrait passer pour la mauvaise raison :
+        // un endpoint cassé qui refuserait TOUT LE MONDE.
+        when(usersRepository.findByUsername("alice")).thenReturn(Optional.of(utilisateur("alice", 10, "ADHERENT")));
+        when(reservationRepository.findById(55L)).thenReturn(Optional.of(reservationDe(10, 55L)));
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(patch(ENDPOINT + "/55/annuler")
+                        .header("Authorization", "Bearer " + tokenPour("alice")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(10))
+                .andExpect(jsonPath("$.statut").value("ANNULEE"));
+    }
+
+    @Test
+    @DisplayName("RS-03 : le BIBLIOTHECAIRE annule la réservation de n'importe quel adhérent (200)")
+    void annuler_parBibliothecaire_reservationDUnAdherent_renvoie200() throws Exception {
+        when(usersRepository.findByUsername("biblio"))
+                .thenReturn(Optional.of(utilisateur("biblio", 1, "BIBLIOTHECAIRE")));
+        when(reservationRepository.findById(77L)).thenReturn(Optional.of(reservationDe(10, 77L)));
+        when(reservationRepository.save(any(Reservation.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        mockMvc.perform(patch(ENDPOINT + "/77/annuler")
+                        .header("Authorization", "Bearer " + tokenPour("biblio")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.userId").value(10))
+                .andExpect(jsonPath("$.statut").value("ANNULEE"));
+    }
+
+    // ------------------------------------------------------------------
+    // RS-02 — Actions réservées au personnel
+    // ------------------------------------------------------------------
 
     @Test
     @DisplayName("RS-02 : un ADHERENT qui appelle DELETE /api/reservations/{id} reçoit 403")

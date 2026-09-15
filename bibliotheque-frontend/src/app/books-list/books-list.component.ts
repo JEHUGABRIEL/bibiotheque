@@ -125,10 +125,10 @@ export class BooksListComponent implements OnInit {
   get deleteMessage(): string {
     if (!this.bookToDelete) return '';
     const activeBorrows = this.deleteBookBorrows.length;
-    if (activeBorrows > 0) {
-      return `<strong>Attention : ce livre est actuellement emprunté (${activeBorrows} emprunt${activeBorrows > 1 ? 's' : ''} en cours).</strong><br><br>Voulez-vous vraiment supprimer « ${this.bookToDelete.bookName} » ? Cette action est irréversible.<br><br><em>Tapez le nom exact du livre pour confirmer :</em>`;
-    }
-    return `Voulez-vous vraiment supprimer « ${this.bookToDelete.bookName} » ? Cette action est irréversible.<br><br><em>Tapez le nom exact du livre pour confirmer :</em>`;
+    const intro = activeBorrows > 0
+      ? `<strong>${this.t.t('books.delete.warning.borrows', { n: activeBorrows })}</strong><br><br>`
+      : '';
+    return `${intro}${this.t.t('books.delete.message', { name: this.bookToDelete.bookName })}<br><br><em>${this.t.t('confirm.type.name')}</em>`;
   }
 
   get isDeleteInputValid(): boolean {
@@ -145,11 +145,11 @@ export class BooksListComponent implements OnInit {
     this.deleteInputValue = '';
     this.booksService.deleteBook(bookId).subscribe({
       next: () => {
-        this.toast.success('Livre « ' + bookName + ' » supprimé avec succès');
+        this.toast.success(this.t.t('toast.book.deleted', { name: bookName }));
         this.getBooks();
       },
       error: (err: HttpErrorResponse) => {
-        this.toast.error(err.error?.message || 'Erreur lors de la suppression');
+        this.toast.error(err.error?.message || this.t.t('error.delete.failed'));
         this.getBooks();
       }
     });
@@ -219,13 +219,13 @@ export class BooksListComponent implements OnInit {
     this.booksService.createBook(this.newBook).subscribe({
       next: () => {
         this.createLoading = false;
-        this.toast.success('Livre ajouté avec succès');
+        this.toast.success(this.t.t('toast.book.added'));
         this.getBooks();
         this.showCreateModal = false;
       },
       error: (err: HttpErrorResponse) => {
         this.createLoading = false;
-        this.toast.error(err.error?.message || 'Erreur lors de l\'ajout');
+        this.toast.error(err.error?.message || this.t.t('error.add.failed'));
       }
     });
   }
@@ -251,13 +251,13 @@ export class BooksListComponent implements OnInit {
     this.booksService.updateBook(this.editBookId, this.editBook).subscribe({
       next: () => {
         this.editLoading = false;
-        this.toast.success('Livre modifié avec succès');
+        this.toast.success(this.t.t('toast.book.updated'));
         this.getBooks();
         this.showEditModal = false;
       },
       error: (err: HttpErrorResponse) => {
         this.editLoading = false;
-        this.toast.error(err.error?.message || 'Erreur lors de la modification');
+        this.toast.error(err.error?.message || this.t.t('error.update.failed'));
       }
     });
   }

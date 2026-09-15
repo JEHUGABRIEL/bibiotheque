@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { Books } from '../_model/books';
 import { BooksService } from '../_service/books.service';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-update-book',
@@ -15,7 +16,8 @@ export class UpdateBookComponent implements OnInit {
   book: Books = new Books();
   constructor(private booksService: BooksService,
     private route: ActivatedRoute,
-    private router: Router) { }
+    private router: Router,
+    public t: TranslationService) { }
 
   ngOnInit(): void {
     this.bookId = this.route.snapshot.params['bookId'];

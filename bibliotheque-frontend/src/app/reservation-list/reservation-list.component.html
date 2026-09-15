@@ -27,7 +27,7 @@
     <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
     <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
   </svg>
-  <h3>Erreur de chargement</h3>
+  <h3>{{ t.t('common.loadError') }}</h3>
   <p>{{ error }}</p>
   <button class="btn-action btn-action-primary" (click)="onRetry()">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -73,7 +73,7 @@
         <td>
           <div class="actions-cell">
           <button class="action-btn action-btn-info"
-                  title="Voir les détails"
+                  [title]="t.t('common.viewDetails')"
                   (click)="onOpen(r); $event.stopPropagation()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13.133 13.133 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13.133 13.133 0 0 1 14.828 8c-.058.087-.122.183-.195.288-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5c-2.12 0-3.879-1.168-5.168-2.457A13.133 13.133 0 0 1 1.172 8"/>
@@ -82,7 +82,7 @@
           </button>
           <button *ngIf="canAccept(r)"
                   class="action-btn action-btn-success"
-                  title="Accepter la demande"
+                  [title]="t.t('reservations.accept.title')"
                   (click)="onAccept(r); $event.stopPropagation()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path d="M12.736 3.97a.733.733 0 0 1 1.047 0c.286.289.29.756.01 1.05L7.88 12.01a.733.733 0 0 1-1.065.02L3.217 8.384a.757.757 0 0 1 0-1.06.733.733 0 0 1 1.047 0l3.052 3.093 5.4-6.425z"/>
@@ -90,7 +90,7 @@
           </button>
           <button *ngIf="canCancel(r)"
                   class="action-btn action-btn-danger"
-                  title="Annuler"
+                  [title]="t.t('btn.cancel')"
                   (click)="onCancel(r); $event.stopPropagation()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
               <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>

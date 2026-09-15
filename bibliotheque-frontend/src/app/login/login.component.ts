@@ -73,6 +73,11 @@ export class LoginComponent implements OnInit, OnDestroy {
     return this.translationService.t(key);
   }
 
+  /** Ferme la page de connexion et revient à la page d'accueil. */
+  goHome(): void {
+    this.router.navigate(['/']);
+  }
+
   login(loginForm: NgForm) {
     this.errorMessage = null;
     this.loading = true;

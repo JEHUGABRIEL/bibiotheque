@@ -5,8 +5,8 @@
     </svg>
   </div>
   <div>
-    <h2>Historique — {{ book.bookName }}</h2>
-    <p>Emprunts de ce livre</p>
+    <h2>{{ t.t('common.history') }} {{ book.bookName }}</h2>
+    <p>{{ t.t('books.details.borrows') }}</p>
   </div>
 </div>
 
@@ -14,10 +14,10 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th>ID Adhérent</th>
-        <th>Date d'emprunt</th>
-        <th>Date de retour</th>
-        <th>Statut</th>
+        <th>{{ t.t('common.memberId') }}</th>
+        <th>{{ t.t('common.issueDate') }}</th>
+        <th>{{ t.t('common.returnDate') }}</th>
+        <th>{{ t.t('common.status') }}</th>
       </tr>
     </thead>
     <tbody>

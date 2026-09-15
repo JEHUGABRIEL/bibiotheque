@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { Books } from '../_model/books';
 import { Users } from '../_model/users';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-reservation-form',
@@ -19,6 +20,8 @@ export class ReservationFormComponent {
 
   selectedBookId: number | null = null;
   selectedUserId: number | null = null;
+
+  constructor(public t: TranslationService) { }
 
   get isFormValid(): boolean {
     return this.selectedBookId !== null && this.selectedUserId !== null;

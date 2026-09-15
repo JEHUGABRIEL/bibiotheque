@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Users } from '../_model/users';
 import { UsersService } from '../_service/users.service';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-update-user',
@@ -15,7 +16,8 @@ export class UpdateUserComponent implements OnInit {
   selectedRole = '';
   constructor(private usersService: UsersService,
     private route: ActivatedRoute,
-    private router: Router) { }
+    private router: Router,
+    public t: TranslationService) { }
 
   ngOnInit(): void {
     this.userId = this.route.snapshot.params['userId'];

@@ -102,7 +102,8 @@ export class BorrowBookComponent implements OnInit {
   showConfirmModal = false;
   confirmTitle = '';
   confirmMessage = '';
-  confirmLabel = 'Confirmer';
+  // Vide : la modale de confirmation retombe sur la traduction de `btn.confirm`.
+  confirmLabel = '';
   confirmIconBg = 'linear-gradient(135deg, #2fbf71, #7bd88f)';
   confirmDanger = false;
   private confirmAction: (() => void) | null = null;
@@ -111,10 +112,6 @@ export class BorrowBookComponent implements OnInit {
   // Détails d'un emprunt
   showDetailModal = false;
   detailBorrow: Borrow | null = null;
-
-  get isAdmin(): boolean {
-    return this.usersService.roleMatch(['Admin']);
-  }
 
   /** Nom du livre pour la modale de suppression (tapez-le nom exact). */
   getBookNameFor(bookId: number | undefined): string {
@@ -131,7 +128,7 @@ export class BorrowBookComponent implements OnInit {
   get deleteMessage(): string {
     if (!this.borrowToDelete) return '';
     const bookName = this.getBookNameFor(this.borrowToDelete.bookId);
-    return `Voulez-vous vraiment supprimer cet emprunt (livre « ${bookName} ») ? Cette action est irréversible.<br><br><em>Tapez le nom exact du livre pour confirmer :</em>`;
+    return `${this.t.t('borrow.delete.message', { name: bookName })}<br><br><em>${this.t.t('confirm.type.name')}</em>`;
   }
 
   /** Tous les emprunts pour la table admin (noms résolus). */
@@ -345,9 +342,9 @@ export class BorrowBookComponent implements OnInit {
       next: (data: any) => {
         this.formSubmitting = false;
         if (this.isStaff) {
-          this.toast.success(data.message || 'Emprunt effectué avec succès');
+          this.toast.success(data.message || this.t.t('toast.borrow.created'));
         } else {
-          this.toast.info(data.message || 'Votre demande a été enregistrée. Le bibliothécaire la traitera dans les plus brefs délais.');
+          this.toast.info(data.message || this.t.t('toast.borrow.requested'));
           this.loadMyQuota();
         }
         this.closeBorrowModal();
@@ -362,12 +359,12 @@ export class BorrowBookComponent implements OnInit {
 
   private extractErrorMessage(err: HttpErrorResponse): string {
     if (err.status === 0) {
-      return 'Le serveur est injoignable. Vérifiez que le backend est démarré.';
+      return this.t.t('common.serverDown');
     }
     if (err.error?.message) {
       return err.error.message;
     }
-    return 'Erreur ' + err.status + ' : impossible d\'effectuer l\'emprunt.';
+    return this.t.t('error.borrow.failed', { status: err.status });
   }
 
   private loadMyQuota() {
@@ -424,13 +421,13 @@ export class BorrowBookComponent implements OnInit {
     this.borrowService.deleteBorrow(id!).subscribe({
       next: (data: any) => {
         this.deleteLoading = false;
-        this.toast.success(data.message || 'Emprunt supprimé avec succès');
+        this.toast.success(data.message || this.t.t('toast.borrow.deleted'));
         this.cancelDelete();
         this.getAllBorrows();
       },
       error: (err: HttpErrorResponse) => {
         this.deleteLoading = false;
-        this.toast.error(err.error?.message || 'Erreur lors de la suppression');
+        this.toast.error(err.error?.message || this.t.t('error.delete.failed'));
       }
     });
   }
@@ -441,16 +438,16 @@ export class BorrowBookComponent implements OnInit {
     this.deleteLoading = true;
     this.borrowService.deleteBorrow(id!).subscribe({
       next: (data: any) => {
-        this.deleteLoading = false;
-        this.toast.success(data.message || 'Emprunt supprimé avec succès');
+        this.deleteLoading = false;        this.toast.success(data.message || this.t.t('toast.borrow.deleted'));
         this.cancelDelete();
         this.getAllBorrows();
       },
       error: (err: HttpErrorResponse) => {
         this.deleteLoading = false;
-        this.toast.error(err.error?.message || 'Erreur lors de la suppression');
+        this.toast.error(err.error?.message || this.t.t('error.delete.failed'));
       }
     });
+
   }
 
   cancelDelete() {
@@ -463,7 +460,7 @@ export class BorrowBookComponent implements OnInit {
   // ==================== Modale de confirmation générique ====================
 
   /** Ouvre la modale de confirmation et mémorise l'action à exécuter. */
-  private openConfirm(title: string, message: string, iconBg: string, action: () => void, danger = false, label = 'Confirmer') {
+  private openConfirm(title: string, message: string, iconBg: string, action: () => void, danger = false, label = '') {
     this.confirmTitle = title;
     this.confirmMessage = message;
     this.confirmIconBg = iconBg;
@@ -490,22 +487,24 @@ export class BorrowBookComponent implements OnInit {
     const who = this.getUserName(borrow.userId);
     const book = this.getBookNameFor(borrow.bookId);
     this.openConfirm(
-      'Valider l\'emprunt',
-      `Confirmer l\'emprunt de « ${book} » par ${who} ? Un exemplaire sera décompté du stock et l\'emprunt passera en statut Validé (à rendre sous 7 jours).`,
+      this.t.t('borrow.confirm.validate.title'),
+      this.t.t('borrow.confirm.validate.message', { book, who }),
       'linear-gradient(135deg, #2fbf71, #7bd88f)',
       () => {
         this.borrowService.confirmBorrow(borrow.borrowId!).subscribe({
           next: (data: any) => {
             const brw: Borrow | undefined = data?.borrow;
-            const dateStr = brw?.dueDate ? ' — à rendre le ' + this.formatDate(brw.dueDate) : '';
-            this.toast.success((data.message || 'Emprunt confirmé') + dateStr);
+            const dateStr = brw?.dueDate
+              ? ' ' + this.t.t('toast.borrow.due.on', { date: this.formatDate(brw.dueDate) })
+              : '';
+            this.toast.success((data.message || this.t.t('toast.borrow.confirmed')) + dateStr);
             this.onConfirmModalClose();
             this.getAllBorrows();
             this.getBooks();
           },
           error: (err: HttpErrorResponse) => {
             this.confirmLoading = false;
-            this.toast.error(err.error?.message || 'Erreur lors de la confirmation');
+            this.toast.error(err.error?.message || this.t.t('error.confirm.failed'));
           }
         });
       }
@@ -517,26 +516,26 @@ export class BorrowBookComponent implements OnInit {
     const who = this.getUserName(borrow.userId);
     const book = this.getBookNameFor(borrow.bookId);
     this.openConfirm(
-      'Refuser l\'emprunt',
-      `Refuser l\'emprunt de « ${book} » par ${who} ?` +
-        (borrow.statut === StatutBorrow.VALIDEE ? ' L\'exemplaire sera remis en rayon.' : ''),
+      this.t.t('borrow.confirm.refuse.title'),
+      this.t.t('borrow.confirm.refuse.message', { book, who }) +
+        (borrow.statut === StatutBorrow.VALIDEE ? ' ' + this.t.t('borrow.confirm.refuse.restock') : ''),
       'linear-gradient(135deg, #dc3545, #ff6b7a)',
       () => {
         this.borrowService.refuseBorrow(borrow.borrowId!).subscribe({
           next: (data: any) => {
-            this.toast.success(data.message || 'Emprunt refusé');
+            this.toast.success(data.message || this.t.t('toast.borrow.refused'));
             this.onConfirmModalClose();
             this.getAllBorrows();
             this.getBooks();
           },
           error: (err: HttpErrorResponse) => {
             this.confirmLoading = false;
-            this.toast.error(err.error?.message || 'Erreur lors du refus');
+            this.toast.error(err.error?.message || this.t.t('error.refuse.failed'));
           }
         });
       },
       true,
-      'Refuser'
+      this.t.t('common.refuse')
     );
   }
 
@@ -545,22 +544,22 @@ export class BorrowBookComponent implements OnInit {
     const who = this.getUserName(borrow.userId);
     const book = this.getBookNameFor(borrow.bookId);
     this.openConfirm(
-      'Retourner le livre',
-      `Enregistrer le retour de « ${book} » par ${who} ? L\'exemplaire sera remis en rayon et l\'emprunt marqué comme rendu.`,
+      this.t.t('borrow.confirm.return.title'),
+      this.t.t('borrow.confirm.return.message', { book, who }),
       'linear-gradient(135deg, #f5a623, #f7c948)',
       () => {
         const brw = new Borrow();
         brw.borrowId = borrow.borrowId;
         this.borrowService.returnBook(brw).subscribe({
           next: (data: any) => {
-            this.toast.success(data.message || 'Retour enregistré avec succès');
+            this.toast.success(data.message || this.t.t('toast.return.registered'));
             this.onConfirmModalClose();
             this.getAllBorrows();
             this.getBooks();
           },
           error: (err: HttpErrorResponse) => {
             this.confirmLoading = false;
-            this.toast.error(err.error?.message || 'Erreur lors du retour');
+            this.toast.error(err.error?.message || this.t.t('error.return.error'));
           }
         });
       }
@@ -575,15 +574,15 @@ export class BorrowBookComponent implements OnInit {
       return;
     }
     this.openConfirm(
-      'Supprimer l\'emprunt',
-      `La suppression définitive requiert une confirmation renforcée. Vous allez devoir taper le nom exact du livre.`,
+      this.t.t('borrow.confirm.delete.title'),
+      this.t.t('borrow.confirm.delete.message'),
       'linear-gradient(135deg, #dc3545, #ff6b7a)',
       () => {
         this.onConfirmModalClose();
         this.openDeleteConfirm(borrow);
       },
       true,
-      'Continuer'
+      this.t.t('borrow.confirm.continue')
   );
   }
 
@@ -599,8 +598,24 @@ export class BorrowBookComponent implements OnInit {
     this.detailBorrow = null;
   }
 
-  /** Date au format JJ/MM/AAAA pour les notifications (sérialisation dd-MM-yyyy côté API). */
-  private formatDate(value: any): string {
+  /**
+   * Date au format JJ/MM/AAAA, pour le tableau, la modale de détails et les toasts.
+   *
+   * L'API sérialise ses dates en "dd-MM-yyyy" (JsonDataSerializer côté backend) :
+   * le pipe `date` d'Angular ne sait pas les lire et levait un InvalidPipeArgument.
+   * On parse donc le format de l'API à la main, comme le font déjà les pages
+   * de réservations.
+   */
+  formatDate(value: any): string {
+    if (!value) return '—';
+    if (typeof value === 'string') {
+      const parts = value.split('-');
+      if (parts.length === 3 && parts[0].length === 2) {
+        const [day, month, year] = parts;
+        const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+        if (!isNaN(parsed.getTime())) return parsed.toLocaleDateString('fr-FR');
+      }
+    }
     const d = new Date(value);
     return isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('fr-FR');
   }
@@ -621,11 +636,11 @@ export class BorrowBookComponent implements OnInit {
 
   getStatutLabel(statut: StatutBorrow): string {
     const labels: Record<string, string> = {
-      'EN_ATTENTE': 'Demande',
-      'VALIDEE': 'Validée',
-      'REFUSEE': 'Refusée',
-      'EN_COURS': 'En cours',
-      'RENDU': 'Rendu'
+      'EN_ATTENTE': this.t.t('borrow.status.demande'),
+      'VALIDEE': this.t.t('borrow.status.validee'),
+      'REFUSEE': this.t.t('borrow.status.refusee'),
+      'EN_COURS': this.t.t('borrow.status.en_cours'),
+      'RENDU': this.t.t('borrow.status.rendu')
     };
     return labels[statut] || statut;
   }

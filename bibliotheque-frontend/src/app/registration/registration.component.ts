@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Users } from '../_model/users';
 import { UsersService } from '../_service/users.service';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-registration',
@@ -18,7 +19,8 @@ export class RegistrationComponent implements OnInit {
   successMessage: string | null = null;
 
   constructor(private usersService: UsersService,
-    private router: Router) { }
+    private router: Router,
+    public t: TranslationService) { }
 
   ngOnInit(): void {
   }
@@ -40,7 +42,7 @@ export class RegistrationComponent implements OnInit {
     this.usersService.createUser(this.user).subscribe({
       next: (data) => {
         this.loading = false;
-        this.successMessage = 'Adhérent inscrit avec succès !';
+        this.successMessage = this.t.t('toast.member.added');
         setTimeout(() => this.goToUsersList(), 1500);
       },
       error: (error) => {
@@ -48,7 +50,7 @@ export class RegistrationComponent implements OnInit {
         if (error.error?.message) {
           this.errorMessage = error.error.message;
         } else {
-          this.errorMessage = 'Une erreur est survenue lors de l\'inscription.';
+          this.errorMessage = this.t.t('error.member.add');
         }
       }
     });

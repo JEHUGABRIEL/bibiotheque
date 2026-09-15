@@ -99,7 +99,7 @@ export class ReturnBookComponent implements OnInit {
       },
       error: () => {
         this.loadingBorrows = false;
-        this.formError = 'Impossible de charger les emprunts de cet adhérent.';
+        this.formError = this.t.t('error.load.member.borrows');
       }
     });
   }
@@ -122,7 +122,7 @@ export class ReturnBookComponent implements OnInit {
     request$.subscribe({
       next: (data: any) => {
         this.formSubmitting = false;
-        this.toast.success(data.message || 'Retour effectué avec succès');
+        this.toast.success(data.message || this.t.t('toast.return.done'));
         this.closeReturnModal();
         this.getBooksByUser();
       },
@@ -135,12 +135,12 @@ export class ReturnBookComponent implements OnInit {
 
   private extractErrorMessage(err: HttpErrorResponse): string {
     if (err.status === 0) {
-      return 'Le serveur est injoignable. Vérifiez que le backend est démarré.';
+      return this.t.t('common.serverDown');
     }
     if (err.error?.message) {
       return err.error.message;
     }
-    return 'Erreur ' + err.status + ' : impossible d\'effectuer le retour.';
+    return this.t.t('error.return.failed', { status: err.status });
   }
 
   private getBooks() {
@@ -200,9 +200,9 @@ export class ReturnBookComponent implements OnInit {
       next: (data: any) => {
         this.returningBorrowId = null;
         if (this.isStaff) {
-          this.toast.success(data.message || 'Retour effectué avec succès');
+          this.toast.success(data.message || this.t.t('toast.return.done'));
         } else {
-          this.toast.info(data.message || 'Votre demande de retour a été enregistrée. Le bibliothécaire la traitera dans les plus brefs délais.');
+          this.toast.info(data.message || this.t.t('toast.return.requested'));
         }
         this.getBooks();
         this.getBooksByUser();

@@ -6,6 +6,7 @@ import { Users } from '../_model/users';
 import { BooksService } from '../_service/books.service';
 import { BorrowService } from '../_service/borrow.service';
 import { UsersService } from '../_service/users.service';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-user-details',
@@ -22,7 +23,8 @@ export class UserDetailsComponent implements OnInit {
   constructor(private route: ActivatedRoute,
     private bookService: BooksService,
     private borrowService: BorrowService,
-    public userService: UsersService
+    public userService: UsersService,
+    public t: TranslationService
   ) { }
 
   books: Books[] = [];

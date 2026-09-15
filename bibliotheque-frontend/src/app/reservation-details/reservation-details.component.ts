@@ -43,11 +43,29 @@ export class ReservationDetailsComponent implements OnInit {
     return this.usersService.isStaff();
   }
 
+  /**
+   * Même règle que la modale de détail de la liste (`reservation-container.canCancelDetail`)
+   * et que le backend : DEMANDE, EN_ATTENTE et DISPONIBLE sont annulables par leur
+   * propriétaire (ou par le personnel).
+   */
   get canCancel(): boolean {
     if (!this.reservation) return false;
-    const statutOk = this.reservation.statut === StatutReservation.EN_ATTENTE
+    const statutOk = this.reservation.statut === StatutReservation.DEMANDE
+      || this.reservation.statut === StatutReservation.EN_ATTENTE
       || this.reservation.statut === StatutReservation.DISPONIBLE;
     return statutOk && (this.isStaff || this.reservation.userId === this.userAuthService.getUserId());
+  }
+
+  /**
+   * Libellé du bouton d'annulation.
+   * Le statut DEMANDE désigne une demande pas encore validée par le personnel ;
+   * dès que l'admin l'a validée (EN_ATTENTE, puis DISPONIBLE), c'est la
+   * réservation elle-même qui est annulée.
+   */
+  get cancelLabel(): string {
+    return this.reservation?.statut === StatutReservation.DEMANDE
+      ? this.t.t('reservations.cancel')
+      : this.t.t('reservations.cancel.reservation');
   }
 
   ngOnInit(): void {
@@ -72,11 +90,11 @@ export class ReservationDetailsComponent implements OnInit {
         if (err.status === 404) {
           this.notFound = true;
         } else if (err.status === 403) {
-          this.error = err.error?.message || "Vous n'avez pas accès à cette réservation.";
+          this.error = err.error?.message || this.t.t('error.reservation.forbidden');
         } else if (err.status === 401) {
-          this.error = 'Session expirée. Reconnectez-vous pour continuer.';
+          this.error = this.t.t('error.session.expired.detail');
         } else {
-          this.error = `Erreur ${err.status} : ${err.error?.message || 'une erreur est survenue'}`;
+          this.error = `${this.t.t('error.status', { status: err.status })} : ${err.error?.message || this.t.t('error.generic.lower')}`;
         }
       }
     });

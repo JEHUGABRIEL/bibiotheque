@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { UserAuthService } from '../_service/user-auth.service';
 import { UsersService } from '../_service/users.service';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-header',
@@ -14,6 +15,7 @@ export class HeaderComponent implements OnInit {
     private userAuthService: UserAuthService, 
     private router: Router,
     public userService: UsersService,
+    public t: TranslationService,
   ) { }
 
   name = this.userAuthService.getName();

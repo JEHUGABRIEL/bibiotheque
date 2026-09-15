@@ -139,9 +139,9 @@ export class ReservationContainerComponent implements OnInit {
       error: (err: HttpErrorResponse) => {
         this.loading = false;
         if (err.status === 0) {
-          this.error = 'Le serveur est injoignable. Vérifiez que le backend est démarré.';
+          this.error = this.t.t('common.serverDown');
         } else {
-          this.error = `Erreur ${err.status} : ${err.error?.message || 'Une erreur est survenue'}`;
+          this.error = `${this.t.t('error.status', { status: err.status })} : ${err.error?.message || this.t.t('error.generic')}`;
         }
       }
     });
@@ -156,7 +156,9 @@ export class ReservationContainerComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         if (err.status !== 0) {
-          this.toast.error(`Erreur lors du chargement des livres : ${err.error?.message || 'Erreur ' + err.status}`);
+          this.toast.error(this.t.t('error.load.books', {
+            detail: err.error?.message || this.t.t('error.status', { status: err.status })
+          }));
         }
       }
     });
@@ -227,7 +229,10 @@ export class ReservationContainerComponent implements OnInit {
   }
 
   onUserSelect() {
-    if (this.selectedUserId !== null && this.formError?.includes('adhérent')) {
+    // La seule erreur de formulaire posée ici concerne le choix de l'adhérent :
+    // dès qu'un adhérent est sélectionné, on l'efface. On ne teste pas le texte
+    // du message (il serait traduit et donc instable).
+    if (this.selectedUserId !== null) {
       this.formError = null;
     }
   }
@@ -295,9 +300,11 @@ export class ReservationContainerComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         if (err.status === 0) {
-          this.toast.error('Impossible de charger les adhérents. Le serveur est injoignable.');
+          this.toast.error(this.t.t('error.load.members'));
         } else {
-          this.toast.error(`Erreur lors du chargement des adhérents : ${err.error?.message || 'Erreur ' + err.status}`);
+          this.toast.error(this.t.t('error.load.members.detail', {
+            detail: err.error?.message || this.t.t('error.status', { status: err.status })
+          }));
         }
       }
     });
@@ -320,6 +327,18 @@ export class ReservationContainerComponent implements OnInit {
       || r.statut === StatutReservation.EN_ATTENTE
       || r.statut === StatutReservation.DISPONIBLE;
     return statutOk && (this.isStaff || r.userId === this.currentUserId);
+  }
+
+  /**
+   * Libellé d'annulation, piloté par le STATUT et non par le rôle :
+   * DEMANDE = la demande n'est pas encore validée par le personnel ;
+   * EN_ATTENTE (validée par l'admin) ou DISPONIBLE = c'est la réservation
+   * elle-même qui est annulée.
+   */
+  cancelLabelFor(reservation: Reservation | null): string {
+    return reservation?.statut === StatutReservation.DEMANDE
+      ? this.t.t('reservations.cancel')
+      : this.t.t('reservations.cancel.reservation');
   }
 
   getStatutLabel(statut: StatutReservation): string {
@@ -384,7 +403,7 @@ export class ReservationContainerComponent implements OnInit {
   onSubmitReservation() {
     if (!this.isFormValid) {
       if (this.isStaff && this.selectedUserId === null) {
-        this.formError = 'Veuillez sélectionner un adhérent pour continuer.';
+        this.formError = this.t.t('error.select.member');
       }
       return;
     }
@@ -406,12 +425,12 @@ export class ReservationContainerComponent implements OnInit {
       next: (created) => {
         this.formSubmitting = false;
         const expiry = created?.dateExpiration
-          ? ' — expire le ' + this.formatDate(created.dateExpiration)
+          ? ' ' + this.t.t('toast.reservation.expires', { date: this.formatDate(created.dateExpiration) })
           : '';
         if (created?.statut === 'DEMANDE') {
-          this.toast.info('Votre demande de réservation a été envoyée. Le bibliothécaire doit l\'accepter.' + expiry);
+          this.toast.info(this.t.t('toast.reservation.requested') + expiry);
         } else {
-          this.toast.success('Réservation créée avec succès' + expiry);
+          this.toast.success(this.t.t('toast.reservation.created') + expiry);
         }
         this.loadReservations();
         this.showCreateModal = false;
@@ -441,7 +460,7 @@ export class ReservationContainerComponent implements OnInit {
   confirmAccept() {
     if (!this.reservationToAccept) return;
     const id = this.reservationToAccept.id;
-    const bookName = this.bookNames.get(this.reservationToAccept.bookId) || 'ce livre';
+    const bookName = this.bookNames.get(this.reservationToAccept.bookId) || this.t.t('common.this.book');
 
     this.reservationService.accepter(id).subscribe({
       next: (updated) => {
@@ -449,7 +468,7 @@ export class ReservationContainerComponent implements OnInit {
         if (index >= 0) {
           this.reservations[index] = updated;
         }
-        this.toast.success('Demande acceptée : la réservation de « ' + bookName + ' » est maintenant en attente');
+        this.toast.success(this.t.t('toast.reservation.accepted', { name: bookName }));
         this.showAcceptConfirm = false;
         this.reservationToAccept = null;
       },
@@ -459,6 +478,14 @@ export class ReservationContainerComponent implements OnInit {
         this.reservationToAccept = null;
       }
     });
+  }
+
+  /** Message de la modale d'acceptation (staff) — construit avec les noms résolus. */
+  get acceptMessage(): string {
+    if (!this.reservationToAccept) return '';
+    const book = this.bookNames.get(this.reservationToAccept.bookId) || this.t.t('common.this.book');
+    const who = this.userNames.get(this.reservationToAccept.userId) || this.t.t('common.this.member');
+    return this.t.t('reservations.accept.message', { book, who });
   }
 
   acceptModalClose() {
@@ -477,7 +504,7 @@ export class ReservationContainerComponent implements OnInit {
   confirmCancel() {
     if (!this.reservationToCancel) return;
     const id = this.reservationToCancel.id;
-    const bookName = this.bookNames.get(this.reservationToCancel.bookId) || ' ce livre';
+    const bookName = this.bookNames.get(this.reservationToCancel.bookId) || this.t.t('common.this.book');
 
     this.reservationService.annuler(id).subscribe({
       next: (updated) => {
@@ -489,7 +516,7 @@ export class ReservationContainerComponent implements OnInit {
         if (index >= 0) {
           this.reservations[index] = updated;
         }
-        this.toast.success('Réservation pour « ' + bookName + ' » annulée avec succès');
+        this.toast.success(this.t.t('toast.reservation.cancelled', { name: bookName }));
         this.showCancelConfirm = false;
         this.reservationToCancel = null;
       },
@@ -510,24 +537,24 @@ export class ReservationContainerComponent implements OnInit {
 
   private extractErrorMessage(err: HttpErrorResponse): string {
     if (err.status === 0) {
-      return 'Le serveur est injoignable. Vérifiez que le backend est démarré.';
+      return this.t.t('common.serverDown');
     }
     if (err.error?.message) {
       if (err.status === 401) {
         return err.error.expired
-          ? err.error.message + ' Cliquez sur Réessayer pour vous reconnecter.'
-          : 'Session invalide. Reconnectez-vous pour continuer.';
+          ? err.error.message + ' ' + this.t.t('error.session.retry')
+          : this.t.t('error.session.invalid');
       }
       return err.error.message;
     }
     switch (err.status) {
-      case 400: return 'Les données envoyées sont invalides. Vérifiez les champs du formulaire.';
-      case 401: return 'Authentification requise. Veuillez vous reconnecter.';
-      case 403: return "Accès refusé : vous n'avez pas les droits nécessaires pour cette action.";
-      case 404: return 'La ressource demandée est introuvable.';
-      case 409: return 'Conflit : cette opération ne peut pas être effectuée dans l\'état actuel.';
-      case 500: return 'Erreur interne du serveur. Veuillez réessayer.';
-      default: return 'Erreur ' + err.status + ' : une erreur inattendue est survenue.';
+      case 400: return this.t.t('error.status.badRequest');
+      case 401: return this.t.t('error.auth.required');
+      case 403: return this.t.t('error.forbidden.action');
+      case 404: return this.t.t('error.notFound');
+      case 409: return this.t.t('error.conflict');
+      case 500: return this.t.t('error.server');
+      default: return this.t.t('error.unexpected', { status: err.status });
     }
   }
 

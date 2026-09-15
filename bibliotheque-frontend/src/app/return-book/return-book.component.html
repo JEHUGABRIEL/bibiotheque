@@ -34,7 +34,7 @@
       <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4"/>
       <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
     </svg>
-    Nouveau retour
+    {{ t.t('return.modal.title') }}
   </button>
 </div>
 
@@ -43,7 +43,7 @@
   <table class="data-table">
     <thead>
       <tr>
-        <th *ngIf="isStaff">Adhérent</th>
+        <th *ngIf="isStaff">{{ t.t('common.member') }}</th>
         <th>{{ t.t('return.table.book') }}</th>
         <th>{{ t.t('return.table.issue_date') }}</th>
         <th>{{ t.t('return.table.return_date') }}</th>
@@ -82,35 +82,35 @@
 </div>
 
 <!-- Modal: Nouveau retour -->
-<app-modal [open]="showReturnModal" title="Nouveau retour" iconColor="linear-gradient(135deg, #5b4cd4, #7c4dff)" (close)="closeReturnModal()">
+<app-modal [open]="showReturnModal" [title]="t.t('return.modal.title')" iconColor="linear-gradient(135deg, #5b4cd4, #7c4dff)" (close)="closeReturnModal()">
   <form (ngSubmit)="submitReturn()" class="modal-form">
     <div class="form-message form-error" *ngIf="formError">{{ formError }}</div>
 
     <div class="form-group" *ngIf="isStaff">
-      <label>Adhérent <span class="required-mark">*</span></label>
+      <label>{{ t.t('common.member') }} <span class="required-mark">*</span></label>
       <select [(ngModel)]="selectedUserId" name="returnUserId" required (change)="onStaffUserChange()">
-        <option [ngValue]="null" disabled>Sélectionner un adhérent…</option>
+        <option [ngValue]="null" disabled>{{ t.t('common.selectMember') }}</option>
         <option *ngFor="let u of users" [ngValue]="u.userId">{{ u.name }} ({{ u.username }})</option>
       </select>
     </div>
 
     <div class="form-group">
-      <label>Emprunt à retourner <span class="required-mark">*</span></label>
+      <label>{{ t.t('return.select.borrow.label') }} <span class="required-mark">*</span></label>
       <select *ngIf="!isStaff" [(ngModel)]="selectedBorrowId" name="returnBorrowIdSelf" required>
-        <option [ngValue]="null" disabled>Sélectionner un emprunt…</option>
+        <option [ngValue]="null" disabled>{{ t.t('return.select.borrow.placeholder') }}</option>
         <option *ngFor="let b of modalBorrows" [ngValue]="b.borrowId">
-          {{ getBookName(b.bookId) }} — emprunté le {{ b.issueDate | date:'dd/MM/yyyy' }}
+          {{ getBookName(b.bookId) }} — {{ t.t('return.borrowed.on') }} {{ b.issueDate | date:'dd/MM/yyyy' }}
         </option>
       </select>
       <select *ngIf="isStaff" [(ngModel)]="selectedBorrowId" name="returnBorrowIdStaff" required
               [disabled]="selectedUserId === null || loadingBorrows">
         <option [ngValue]="null" disabled>{{ loadingBorrows ? 'Chargement…' : 'Sélectionner un emprunt…' }}</option>
         <option *ngFor="let b of modalBorrows" [ngValue]="b.borrowId">
-          {{ getBookName(b.bookId) }} — emprunté le {{ b.issueDate | date:'dd/MM/yyyy' }}
+          {{ getBookName(b.bookId) }} — {{ t.t('return.borrowed.on') }} {{ b.issueDate | date:'dd/MM/yyyy' }}
         </option>
       </select>
       <div class="form-hint form-hint-muted" *ngIf="isStaff && selectedUserId !== null && modalBorrows.length === 0 && !loadingBorrows">
-        Aucun emprunt en cours pour cet adhérent.
+        {{ t.t('return.no.borrows.member') }}
       </div>
     </div>
 

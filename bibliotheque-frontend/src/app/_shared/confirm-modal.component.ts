@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-confirm-modal',
@@ -11,24 +12,24 @@ import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core
             <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0z"/>
           </svg>
         </div>
-        <h3>{{ title }}</h3>
-        <p [innerHTML]="message"></p>
+        <h3>{{ title || t.t('common.confirm.title') }}</h3>
+        <p [innerHTML]="message || t.t('confirm.default')"></p>
         <div *ngIf="requireInput" class="confirm-input-group">
           <label>{{ inputLabel }}</label>
           <input type="text" class="confirm-input" [placeholder]="inputPlaceholder"
                  [value]="inputValue" (input)="onInput($event)">
           <p *ngIf="inputValue && inputValue !== requiredValue" class="confirm-input-error">
-            Le texte ne correspond pas
+            {{ t.t('confirm.input.mismatch') }}
           </p>
         </div>
         <div class="confirm-actions">
           <button class="confirm-btn confirm-cancel" (click)="cancel.emit()">
-            {{ cancelLabel }}
+            {{ cancelLabel || t.t('btn.cancel') }}
           </button>
           <button class="confirm-btn confirm-ok" [class.confirm-danger]="danger"
                   [disabled]="requireInput && inputValue !== requiredValue"
                   (click)="onConfirm()">
-            {{ confirmLabel }}
+            {{ confirmLabel || t.t('btn.confirm') }}
           </button>
         </div>
       </div>
@@ -199,10 +200,12 @@ import { Component, EventEmitter, Input, Output, OnChanges } from '@angular/core
 })
 export class ConfirmModalComponent implements OnChanges {
   @Input() open = false;
-  @Input() title = 'Confirmation';
-  @Input() message = 'Êtes-vous sûr ?';
-  @Input() confirmLabel = 'Confirmer';
-  @Input() cancelLabel = 'Annuler';
+  // Valeurs par défaut vides : le template retombe sur le dictionnaire fr/en,
+  // ce qui évite des libellés français figés dans un composant partagé.
+  @Input() title = '';
+  @Input() message = '';
+  @Input() confirmLabel = '';
+  @Input() cancelLabel = '';
   @Input() danger = false;
   @Input() iconBg = 'linear-gradient(135deg, #7c4dff, #5b4cd4)';
   @Input() requireInput = false;
@@ -213,6 +216,8 @@ export class ConfirmModalComponent implements OnChanges {
   @Output() cancel = new EventEmitter<void>();
 
   inputValue = '';
+
+  constructor(public t: TranslationService) {}
 
   ngOnChanges() {
     if (this.open) {

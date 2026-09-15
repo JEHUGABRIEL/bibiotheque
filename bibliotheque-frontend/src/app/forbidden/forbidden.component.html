@@ -6,12 +6,12 @@
         <path d="M4.646 4.646a.5.5 0 0 1 .708 0L8 7.293l2.646-2.647a.5.5 0 0 1 .708.708L8.707 8l2.647 2.646a.5.5 0 0 1-.708.708L8 8.707l-2.646 2.647a.5.5 0 0 1-.708-.708L7.293 8 4.646 5.354a.5.5 0 0 1 0-.708"/>
       </svg>
     </div>
-    <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.5rem; color: #e8e9ed; margin-bottom: 0.5rem;">Accès refusé</h2>
+    <h2 style="font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.5rem; color: #e8e9ed; margin-bottom: 0.5rem;">{{ t.t('common.forbidden.title') }}</h2>
     <p style="color: #8b8fa3; font-size: 0.95rem; margin-bottom: 1.5rem;">
-      Vous n'avez pas les droits nécessaires pour accéder à cette page.
+      {{ t.t('common.forbidden.text') }}
     </p>
     <a routerLink="/" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: linear-gradient(135deg, #4f6df5, #7c4dff); color: #fff; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 0.9rem;">
-      Retour à l'accueil
+      {{ t.t('common.backHome') }}
     </a>
   </div>
 </div>

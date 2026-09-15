@@ -32,7 +32,7 @@
 <app-modal [open]="showCreateModal" [title]="addTitleLabel" iconColor="linear-gradient(135deg, #4f6df5, #7c4dff)" (close)="showCreateModal = false">
   <form (ngSubmit)="onSubmitReservation()" class="modal-form">
     <div class="form-group autocomplete">
-      <label>Livre <span class="required-mark">*</span></label>
+      <label>{{ t.t('common.book') }} <span class="required-mark">*</span></label>
       <input type="text" class="form-control" name="bookQuery" autocomplete="off"
              [placeholder]="t.t('reservations.select.book')"
              [value]="bookQuery"
@@ -51,7 +51,7 @@
           <span class="autocomplete-meta">
             {{ book.bookAuthor }}
             <span [class]="isBookReservable(book) ? 'status-badge status-expiree' : 'status-badge status-disponible'">
-              {{ isBookReservable(book) ? '0 ex. — réservable' : book.noOfCopies + ' ex. — indisponible' }}
+              {{ isBookReservable(book) ? t.t('common.ex.reservable') : t.t('common.ex.unavailable', { n: book.noOfCopies }) }}
             </span>
           </span>
         </button>
@@ -60,12 +60,12 @@
           <span class="autocomplete-meta">{{ createNewHint }}</span>
         </button>
       </div>
-      <div class="form-hint" *ngIf="selectedBookId !== null"><span class="hint-ok">Sélectionné :</span> {{ bookQuery }}</div>
-      <div class="form-hint" *ngIf="selectedBookId === null && newBookName"><span class="hint-ok">Sélectionné :</span> {{ newBookName }} — nouveau livre</div>
+      <div class="form-hint" *ngIf="selectedBookId !== null"><span class="hint-ok">{{ t.t('common.selected') }}</span> {{ bookQuery }}</div>
+      <div class="form-hint" *ngIf="selectedBookId === null && newBookName"><span class="hint-ok">{{ t.t('common.selected') }}</span> {{ newBookName }} {{ t.t('reservations.new.book.suffix') }}</div>
       <div class="form-hint form-hint-muted">{{ t.t('reservations.select.book.hint') }}</div>
     </div>
     <div class="form-group" *ngIf="isStaff">
-      <label>Adhérent <span class="required-mark">*</span></label>
+      <label>{{ t.t('common.member') }} <span class="required-mark">*</span></label>
       <select *ngIf="users.length > 0" [(ngModel)]="selectedUserId" name="userId" required
               [class.input-error]="isStaff && selectedUserId === null && formSubmitting"
               (change)="onUserSelect()">
@@ -78,7 +78,7 @@
         {{ t.t('reservations.no.users') }}
       </div>
       <div *ngIf="selectedUserId === null && formSubmitting" class="form-hint form-hint-error">
-        Veuillez sélectionner un adhérent pour continuer
+        {{ t.t('error.select.member') }}
       </div>
     </div>
 
@@ -96,11 +96,9 @@
 <!-- Modal confirmation acceptation d'une demande (staff) -->
 <app-confirm-modal
   [open]="showAcceptConfirm"
-  title="Accepter la demande"
-  [message]="reservationToAccept
-    ? 'Accepter la demande de réservation de « ' + (bookNames.get(reservationToAccept.bookId) || 'ce livre') + ' » par ' + (userNames.get(reservationToAccept.userId) || 'cet adhérent') + ' ? Elle deviendra une réservation en attente.'
-    : ''"
-  confirmLabel="Accepter"
+  [title]="t.t('reservations.accept.title')"
+  [message]="acceptMessage"
+  [confirmLabel]="t.t('common.accept')"
   [cancelLabel]="t.t('btn.cancel')"
   iconBg="linear-gradient(135deg, #2fbf71, #7bd88f)"
   (confirm)="confirmAccept()"
@@ -110,9 +108,9 @@
 <!-- Modal confirmation annulation -->
 <app-confirm-modal
   [open]="showCancelConfirm"
-  title="Annuler la réservation"
-  [message]="'Voulez-vous vraiment annuler cette réservation ? Cette action est irréversible.'"
-  [confirmLabel]="t.t('reservations.cancel')"
+  [title]="t.t('reservations.cancel.title')"
+  [message]="t.t('reservations.cancel.message')"
+  [confirmLabel]="cancelLabelFor(reservationToCancel)"
   [cancelLabel]="t.t('btn.cancel')"
   [danger]="true"
   iconBg="linear-gradient(135deg, #dc3545, #ff6b7a)"
@@ -150,11 +148,11 @@
     <button type="button" class="btn-action btn-action-outline" (click)="showDetailModal = false">{{ t.t('btn.close') }}</button>
     <button *ngIf="isStaff && detailReservation?.statut === 'DEMANDE'" type="button" class="btn-action btn-action-success"
             (click)="showDetailModal = false; openAcceptConfirm(detailReservation!)">
-      Accepter
+      {{ t.t('common.accept') }}
     </button>
     <button *ngIf="canCancelDetail" type="button" class="btn-action btn-action-danger"
             (click)="showDetailModal = false; openCancelConfirm(detailReservation!)">
-      {{ t.t('reservations.cancel') }}
+      {{ cancelLabelFor(detailReservation) }}
     </button>
   </div>
 </app-modal>

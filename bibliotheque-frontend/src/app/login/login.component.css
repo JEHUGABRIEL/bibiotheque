@@ -11,6 +11,45 @@
   overflow: hidden;
 }
 
+/* Bouton retour vers l'accueil — en haut à gauche */
+.back-btn {
+  position: absolute;
+  top: 1rem;
+  left: 1.5rem;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+
+/* Même survol que le bouton blanc « Se connecter » de la page d'accueil :
+   le bouton passe en blanc, texte sombre, et se soulève. Visible surtout en
+   thème sombre, où il est sinon une carte foncée (en thème clair il est déjà
+   blanc au repos). */
+.back-btn:hover,
+.back-btn:focus-visible {
+  background: #fff;
+  color: #12141c;
+  border-color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* Toujours en appui, mais légèrement enfoncé. */
+.back-btn:active {
+  transform: translateY(-1px) scale(0.98);
+}
+
 /* Top bar */
 .login-topbar {
   position: absolute;

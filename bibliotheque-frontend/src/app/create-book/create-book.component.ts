@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Books } from '../_model/books';
 import { BooksService } from '../_service/books.service';
+import { TranslationService } from '../_service/translation.service';
 
 @Component({
   selector: 'app-create-book',
@@ -16,7 +17,8 @@ export class CreateBookComponent implements OnInit {
   successMessage: string | null = null;
 
   constructor(private booksService: BooksService,
-    private router: Router) { }
+    private router: Router,
+    public t: TranslationService) { }
 
   ngOnInit(): void {
   }
@@ -38,7 +40,7 @@ export class CreateBookComponent implements OnInit {
     this.booksService.createBook(this.book).subscribe({
       next: (data) => {
         this.loading = false;
-        this.successMessage = 'Livre ajouté avec succès !';
+        this.successMessage = this.t.t('toast.book.added');
         setTimeout(() => this.goToBooksList(), 1500);
       },
       error: (error) => {
@@ -46,9 +48,9 @@ export class CreateBookComponent implements OnInit {
         if (error.error?.message) {
           this.errorMessage = error.error.message;
         } else if (error.status === 409) {
-          this.errorMessage = 'Ce livre existe déjà.';
+          this.errorMessage = this.t.t('error.book.exists');
         } else {
-          this.errorMessage = 'Une erreur est survenue lors de l\'ajout.';
+          this.errorMessage = this.t.t('error.book.add');
         }
       }
     });

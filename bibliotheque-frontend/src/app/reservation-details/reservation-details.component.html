@@ -27,7 +27,7 @@
 
 <!-- Erreur (403 inline pour un adhérent sur une réservation d'autrui) -->
 <div *ngIf="error && !loading" class="error-state">
-  <h3>Accès refusé / erreur</h3>
+  <h3>{{ t.t('common.accessError') }}</h3>
   <p>{{ error }}</p>
   <button class="btn-action btn-action-primary" (click)="goBack()">{{ t.t('btn.back') }}</button>
   <p></p>
@@ -59,7 +59,7 @@
   <div class="details-actions">
     <button class="btn-action btn-action-outline" (click)="goBack()">{{ t.t('btn.back') }}</button>
     <button *ngIf="canCancel" class="btn-action btn-action-danger" (click)="confirmCancel()">
-      {{ t.t('reservations.cancel') }}
+      {{ cancelLabel }}
     </button>
   </div>
 </div>

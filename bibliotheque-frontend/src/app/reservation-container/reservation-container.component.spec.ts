@@ -20,12 +20,16 @@ describe('ReservationContainerComponent', () => {
   const makeComponent = (opts: { staff?: boolean; userId?: number | null } = {}) => {
     const usersServiceStub = { isStaff: () => !!opts.staff, roleMatch: () => !!opts.staff } as any;
     const userAuthStub = { getUserId: () => (opts.userId === undefined ? 51 : opts.userId) } as any;
+    const toastStub = { success: () => {}, error: () => {}, info: () => {}, warning: () => {} } as any;
+    const notificationsStub = { markSelfCancelled: () => {} } as any;
     return new ReservationContainerComponent(
       {} as any,                                    // ReservationService — non utilisé ici
       usersServiceStub as any,
       userAuthStub as any,
       { snapshot: {}, queryParams: {} } as any,     // ActivatedRoute — non utilisé ici
-      new TranslationService()
+      new TranslationService(),
+      toastStub,                                    // ToastService
+      notificationsStub                             // NotificationService
     );
   };
 
@@ -195,6 +199,41 @@ describe('ReservationContainerComponent', () => {
       expect(c.canCancelDetail).toBeTrue();
       c.detailReservation = null;
       expect(c.canCancelDetail).toBeFalse();
+    });
+  });
+
+  // ---------- Libellé d'annulation (piloté par le statut) ----------
+
+  describe('cancelLabelFor', () => {
+    it('une DEMANDE pas encore validée par l\'admin se présente comme une demande', () => {
+      const c = makeComponent();
+      expect(c.cancelLabelFor(makeReservation(1, 1, 51, StatutReservation.DEMANDE)))
+        .toBe('Annuler la demande');
+    });
+
+    it('une demande validée par l\'admin (EN_ATTENTE) se présente comme une réservation', () => {
+      const c = makeComponent();
+      expect(c.cancelLabelFor(makeReservation(2, 1, 51, StatutReservation.EN_ATTENTE)))
+        .toBe('Annuler la réservation');
+    });
+
+    it('un livre devenu disponible reste une réservation à annuler', () => {
+      const c = makeComponent();
+      expect(c.cancelLabelFor(makeReservation(3, 1, 51, StatutReservation.DISPONIBLE)))
+        .toBe('Annuler la réservation');
+    });
+
+    it('sans réservation sélectionnée, le libellé retombe sur « réservation »', () => {
+      const c = makeComponent();
+      expect(c.cancelLabelFor(null)).toBe('Annuler la réservation');
+    });
+
+    it('le libellé ne dépend pas du rôle : le personnel voit le même', () => {
+      const c = makeComponent({ staff: true, userId: 1 });
+      expect(c.cancelLabelFor(makeReservation(4, 1, 51, StatutReservation.DEMANDE)))
+        .toBe('Annuler la demande');
+      expect(c.cancelLabelFor(makeReservation(5, 1, 51, StatutReservation.EN_ATTENTE)))
+        .toBe('Annuler la réservation');
     });
   });
 

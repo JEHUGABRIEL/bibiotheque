@@ -1,81 +1,308 @@
+/* ============================================
+   PAGE — le diaporama occupe tout l'écran
+   ============================================ */
+
+/* :host = <app-home>. Sans hauteur sur l'hôte, `height: 100%` du wrapper
+   se résoudrait contre une hauteur auto : l'image ne couvrirait que la
+   hauteur de son contenu au lieu de tout l'écran. */
+:host {
+  display: block;
+  height: 100%;
+}
+
 .home-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: calc(100vh - 48px);
-  padding: 2rem;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.home-slider {
+  position: relative;
+  width: 100%;
+  height: 100%;
   overflow: hidden;
+  outline: none;
 }
 
-.hero {
-  text-align: center;
-  max-width: 600px;
+.home-slider:focus-visible {
+  box-shadow: inset 0 0 0 3px var(--border-focus, #4f6df5);
 }
 
-.hero-icon {
-  width: 100px;
-  height: 100px;
-  margin: 0 auto 2rem;
-  background: linear-gradient(135deg, rgba(79, 109, 245, 0.15), rgba(124, 77, 255, 0.15));
-  border: 1px solid rgba(79, 109, 245, 0.2);
-  border-radius: 24px;
+/* ============================================
+   COUCHE IMAGES (plein écran)
+   ============================================ */
+
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  pointer-events: none;
+}
+
+.slide.active {
+  opacity: 1;
+}
+
+.slide-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.06);
+  transition: transform 9s ease;
+}
+
+/* Léger zoom continu : l'image respire pendant qu'elle est affichée. */
+.slide.active .slide-image {
+  transform: scale(1);
+}
+
+.slide-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 10, 16, 0.8) 0%,
+    rgba(8, 10, 16, 0.45) 45%,
+    rgba(8, 10, 16, 0.82) 100%
+  );
+}
+
+/* ============================================
+   BARRE DU HAUT — logo à gauche, connexion à droite
+   ============================================ */
+
+.home-topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.5rem 2.5rem;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  text-decoration: none;
+}
+
+.brand-icon {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  background: linear-gradient(135deg, #5b4cd4, #7c4dff);
+  border-radius: 11px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #4f6df5;
-  animation: float 3s ease-in-out infinite;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(79, 109, 245, 0.4);
 }
 
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
-}
-
-.hero h1 {
+.brand-text {
   font-family: 'Montserrat', sans-serif;
-  font-weight: 800;
-  font-size: 3rem;
-  color: #e8e9ed;
-  margin: 0 0 0.75rem;
-  letter-spacing: -0.5px;
-}
-
-.hero-subtitle {
-  color: #8b8fa3;
+  font-weight: 700;
   font-size: 1.15rem;
-  margin: 0 0 2.5rem;
-  line-height: 1.6;
+  color: #fff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.45);
 }
 
-.hero-actions {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.hero-btn {
+.login-btn {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.85rem 2rem;
-  border: none;
+  padding: 0.7rem 1.6rem;
   border-radius: 12px;
   font-family: 'Montserrat', sans-serif;
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.95rem;
   text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s;
+  /* Fond blanc demandé, texte sombre pour rester lisible sur les photos. */
+  background: #fff;
+  color: #12141c;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
 }
 
-.hero-btn.primary {
-  background: linear-gradient(135deg, #4f6df5, #7c4dff);
-  color: #fff;
-  box-shadow: 0 4px 20px rgba(79, 109, 245, 0.3);
-}
-
-.hero-btn.primary:hover {
+.login-btn:hover,
+.login-btn:focus-visible {
+  background: #ececf3;
+  color: #12141c;
   transform: translateY(-2px);
-  box-shadow: 0 8px 30px rgba(79, 109, 245, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+/* ============================================
+   CENTRE — les textes du slide courant
+   ============================================ */
+
+.slider-inner {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6rem 3rem 5rem;
+}
+
+.slide-texts {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  /* hauteur réservée : la composition ne saute pas d'un slide à l'autre */
+  min-height: 260px;
+}
+
+.slide-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.9rem;
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s ease 0.15s, transform 0.6s ease 0.15s;
+  pointer-events: none;
+}
+
+.slide-text.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.slide-tag {
+  padding: 0.3rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: rgba(124, 77, 255, 0.28);
+  border: 1px solid rgba(124, 77, 255, 0.6);
+  color: #ded3ff;
+  backdrop-filter: blur(6px);
+}
+
+.slide-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 800;
+  font-size: 2.6rem;
+  line-height: 1.18;
   color: #fff;
+  margin: 0;
+  text-shadow: 0 4px 26px rgba(0, 0, 0, 0.6);
+}
+
+.slide-paragraph {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.86);
+  margin: 0;
+  max-width: 620px;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.55);
+}
+
+.slide-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1.7rem;
+  border-radius: 12px;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  color: #fff;
+  background: linear-gradient(135deg, #4f6df5, #7c4dff);
+  box-shadow: 0 6px 22px rgba(79, 109, 245, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.slide-cta:hover,
+.slide-cta:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(79, 109, 245, 0.5);
+  color: #fff;
+}
+
+/* ============================================
+   COMMANDES — uniquement les pastilles (pas de flèches)
+   ============================================ */
+
+.slide-dots {
+  position: absolute;
+  left: 50%;
+  bottom: 1.75rem;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem;
+  z-index: 3;
+}
+
+.slide-dot {
+  width: 10px;
+  height: 10px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.slide-dot:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.slide-dot.active {
+  width: 30px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #4f6df5, #7c4dff);
+  border-color: rgba(255, 255, 255, 0.9);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+/* Écrans peu hauts (portables) : on resserre la composition. */
+@media (max-height: 760px) {
+  .slider-inner { padding: 5.5rem 2rem 4rem; }
+  .slide-texts { min-height: 220px; }
+  .slide-title { font-size: 2.1rem; }
+}
+
+@media (max-width: 768px) {
+  .home-topbar { padding: 1rem 1.25rem; }
+  .brand-icon { width: 36px; height: 36px; min-width: 36px; }
+  .brand-text { font-size: 1.05rem; }
+  .login-btn { padding: 0.6rem 1.2rem; font-size: 0.88rem; }
+
+  .slider-inner { padding: 5.5rem 1.25rem 4rem; }
+  .slide-texts { min-height: 240px; }
+  .slide-title { font-size: 1.8rem; }
+  .slide-paragraph { font-size: 0.95rem; }
+
+}
+
+@media (max-width: 480px) {
+  .slide-paragraph { display: none; }
+  .slide-texts { min-height: 170px; }
+  .slide-title { font-size: 1.55rem; }
+  .slide-dots { bottom: 1.25rem; }
 }

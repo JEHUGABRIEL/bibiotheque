@@ -122,8 +122,8 @@ export class DashboardComponent implements OnInit {
       error: (err) => {
         this.loading = false;
         this.error = (err?.status === 0)
-          ? 'Le serveur est injoignable. Vérifiez que le backend est démarré.'
-          : `Erreur ${err?.status} : ${err?.error?.message || 'Une erreur est survenue'}`;
+          ? this.t.t('common.serverDown')
+          : `${this.t.t('error.status', { status: err?.status })} : ${err?.error?.message || this.t.t('error.generic')}`;
       }
     });
   }
@@ -141,10 +141,10 @@ export class DashboardComponent implements OnInit {
     this.reservationPending = pending;
 
     this.stats = [
-      { key: 'books',         icon: 'linear-gradient(135deg, #4f6df5, #7c4dff)',  value: books.length,        detail: totalCopies + ' ex. en rayon' },
-      { key: 'users',         icon: 'linear-gradient(135deg, #7c4dff, #b44cd4)',  value: users.length,        detail: 'adhérents inscrits' },
-      { key: 'borrows',       icon: 'linear-gradient(135deg, #2fbf71, #7bd88f)',  value: borrows.length,      detail: activeBorrows + ' en cours' },
-      { key: 'reservations',  icon: 'linear-gradient(135deg, #f5a623, #f7c948)',  value: reservations.length, detail: pending + ' en attente' },
+      { key: 'books',         icon: 'linear-gradient(135deg, #4f6df5, #7c4dff)',  value: books.length,        detail: this.t.t('dashboard.stats.copies', { n: totalCopies }) },
+      { key: 'users',         icon: 'linear-gradient(135deg, #7c4dff, #b44cd4)',  value: users.length,        detail: this.t.t('dashboard.members.registered') },
+      { key: 'borrows',       icon: 'linear-gradient(135deg, #2fbf71, #7bd88f)',  value: borrows.length,      detail: this.t.t('dashboard.stats.borrows.detail', { n: activeBorrows }) },
+      { key: 'reservations',  icon: 'linear-gradient(135deg, #f5a623, #f7c948)',  value: reservations.length, detail: this.t.t('dashboard.stats.reservations.detail', { n: pending }) },
     ];
 
     this.segments = this.buildSegments(reservations);
@@ -164,7 +164,7 @@ export class DashboardComponent implements OnInit {
     const userId = this.userAuthService.getUserId();
     if (!userId) {
       this.loading = false;
-      this.error = 'Utilisateur non identifié.';
+      this.error = this.t.t('dashboard.user.unknown');
       return;
     }
 
@@ -230,11 +230,11 @@ export class DashboardComponent implements OnInit {
 
   getStatutLabelBorrow(statut: string): string {
     const labels: Record<string, string> = {
-      'EN_ATTENTE': 'Demande',
-      'VALIDEE': 'Validé',
-      'REFUSEE': 'Refusé',
-      'EN_COURS': 'En cours',
-      'RENDU': 'Rendu'
+      'EN_ATTENTE': this.t.t('borrow.status.demande'),
+      'VALIDEE': this.t.t('dashboard.status.validated'),
+      'REFUSEE': this.t.t('dashboard.status.refused'),
+      'EN_COURS': this.t.t('borrow.status.en_cours'),
+      'RENDU': this.t.t('borrow.status.rendu')
     };
     return labels[statut] || statut;
   }
@@ -338,23 +338,23 @@ export class DashboardComponent implements OnInit {
     for (const r of reservations) {
       items.push({
         icon: 'r', color: '#f5a623',
-        label: 'Réservation — ' + (bookName.get(r.bookId) ?? 'livre #' + r.bookId),
-        detail: (userName.get(r.userId) ?? 'adhérent #' + r.userId) + ' · ' + this.t.t(statusKey(r.statut)),
+        label: this.t.t('dashboard.reservation.entry', { name: bookName.get(r.bookId) ?? this.t.t('dashboard.book.hash', { id: r.bookId }) }),
+        detail: (userName.get(r.userId) ?? this.t.t('dashboard.member.hash', { id: r.userId })) + ' · ' + this.t.t(statusKey(r.statut)),
         when: r.dateReservation ? new Date(r.dateReservation) : null,
       });
     }
     for (const b of borrows) {
       items.push({
         icon: 'b', color: '#4f6df5',
-        label: 'Emprunt — ' + (bookName.get(b.bookId) ?? 'livre #' + b.bookId),
-        detail: (userName.get(b.userId) ?? 'adhérent #' + b.userId) + (b.returnDate ? ' · retourné' : ' · en cours'),
+        label: this.t.t('dashboard.activity.borrow', { name: bookName.get(b.bookId) ?? this.t.t('dashboard.book.hash', { id: b.bookId }) }),
+        detail: (userName.get(b.userId) ?? this.t.t('dashboard.member.hash', { id: b.userId })) + (b.returnDate ? ' ' + this.t.t('dashboard.returned.suffix') : ' ' + this.t.t('dashboard.activity.ongoing')),
         when: b.issueDate ? new Date(b.issueDate) : null,
       });
     }
     for (const u of users) {
       items.push({
         icon: 'u', color: '#7c4dff',
-        label: 'Inscription — ' + (u.name || u.username),
+        label: this.t.t('dashboard.activity.registration', { name: u.name || u.username }),
         detail: this.t.t(this.usersService.roleLabelKey(u.role?.[0]?.roleName ?? '')),
         when: null,
       });

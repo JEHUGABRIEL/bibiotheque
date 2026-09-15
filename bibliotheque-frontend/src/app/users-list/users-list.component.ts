@@ -125,7 +125,7 @@ export class UsersListComponent implements OnInit {
       },
       error: (err: HttpErrorResponse) => {
         this.detailLoading = false;
-        this.detailError = err.error?.message || 'Erreur ' + err.status;
+        this.detailError = err.error?.message || this.t.t('error.status', { status: err.status });
         if (err.status === 403) { this.showDetailModal = false; }
       }
     });
@@ -166,13 +166,13 @@ export class UsersListComponent implements OnInit {
     this.usersService.createUser(this.newUser).subscribe({
       next: () => {
         this.createLoading = false;
-        this.toast.success('Adhérent inscrit avec succès');
+        this.toast.success(this.t.t('toast.member.added'));
         this.getUsers();
         this.showCreateModal = false;
       },
       error: (err: HttpErrorResponse) => {
         this.createLoading = false;
-        this.toast.error(err.error?.message || 'Erreur lors de l\'inscription');
+        this.toast.error(err.error?.message || this.t.t('toast.member.add.error'));
       }
     });
   }
@@ -197,13 +197,13 @@ export class UsersListComponent implements OnInit {
     this.usersService.updateUser(this.editUserId, this.editUser).subscribe({
       next: () => {
         this.editLoading = false;
-        this.toast.success('Utilisateur modifié avec succès');
+        this.toast.success(this.t.t('toast.member.updated'));
         this.getUsers();
         this.showEditModal = false;
       },
       error: (err: HttpErrorResponse) => {
         this.editLoading = false;
-        this.toast.error(err.error?.message || 'Erreur lors de la modification');
+        this.toast.error(err.error?.message || this.t.t('toast.member.update.error'));
       }
     });
   }

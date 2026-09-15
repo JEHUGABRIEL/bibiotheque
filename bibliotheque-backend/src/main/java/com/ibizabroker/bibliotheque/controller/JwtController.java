@@ -2,9 +2,11 @@ package com.ibizabroker.bibliotheque.controller;
 
 import com.ibizabroker.bibliotheque.entity.JwtRequest;
 import com.ibizabroker.bibliotheque.entity.JwtResponse;
+import com.ibizabroker.bibliotheque.exceptions.ApiErrorResponse;
 import com.ibizabroker.bibliotheque.exceptions.BadRequestException;
 import com.ibizabroker.bibliotheque.service.JwtService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,8 +31,9 @@ public class JwtController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             // Bad credentials, user not found, etc.
-            return ResponseEntity.status(401)
-                    .body(java.util.Map.of("message", "Identifiants incorrects"));
+            // Même corps d'erreur que le reste de l'API : message + status + timestamp.
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(ApiErrorResponse.of("Identifiants incorrects", HttpStatus.UNAUTHORIZED));
         }
     }
 }

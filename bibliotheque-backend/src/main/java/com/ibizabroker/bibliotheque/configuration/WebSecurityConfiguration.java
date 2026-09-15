@@ -1,5 +1,6 @@
 package com.ibizabroker.bibliotheque.configuration;
 
+import com.ibizabroker.bibliotheque.exceptions.ApiErrorResponse;
 import com.ibizabroker.bibliotheque.service.JwtService;
 import com.ibizabroker.bibliotheque.util.JwtUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -22,7 +24,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
-import java.util.Map;
 import org.springframework.web.cors.CorsConfigurationSource;
 
 @Configuration
@@ -54,6 +55,18 @@ public class WebSecurityConfiguration {
         httpSecurity.authorizeHttpRequests(auth -> auth
                 .requestMatchers("/authenticate", "/admin/books/").permitAll()
                 .requestMatchers(HttpHeaders.ALLOW).permitAll()
+                // Documentation d'API : Swagger UI doit pouvoir charger sa page et son
+                // descriptif AVANT toute authentification, sinon la page elle-même
+                // répondrait 401. Choix assumé : /v3/api-docs publie la surface de l'API.
+                // Retirer ces deux lignes (et la dépendance springdoc) referme tout :
+                // aucun endpoint MÉTIER n'est concerné par cette ouverture.
+                //
+                // « /v3/api-docs » est listé SÉPARÉMENT de « /v3/api-docs/** » : le motif
+                // avec « /** » ne couvre pas le chemin racine, et Spring 6 ne fait plus de
+                // correspondance avec slash final — même piège que le "/admin/books/"
+                // inopérant plus haut.
+                .requestMatchers("/swagger-ui.html", "/swagger-ui/**",
+                        "/v3/api-docs", "/v3/api-docs/**", "/v3/api-docs.yaml").permitAll()
                 .anyRequest().authenticated()
         );
         // 401 sans token / token invalide ; 403 JSON quand authentifié sans droits
@@ -93,8 +106,9 @@ public class WebSecurityConfiguration {
 
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json;charset=UTF-8");
+            // Même corps d'erreur que le GlobalExceptionHandler : message + status + timestamp.
             response.getWriter().write(new ObjectMapper().writeValueAsString(
-                    Map.of("message", "Accès refusé : droits insuffisants")));
+                    ApiErrorResponse.of("Accès refusé : droits insuffisants", HttpStatus.FORBIDDEN)));
         };
     }
 }

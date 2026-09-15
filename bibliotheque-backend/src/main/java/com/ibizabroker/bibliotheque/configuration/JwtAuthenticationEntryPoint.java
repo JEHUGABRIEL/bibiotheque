@@ -1,6 +1,7 @@
 package com.ibizabroker.bibliotheque.configuration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ibizabroker.bibliotheque.exceptions.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Component;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Map;
 
 /**
  * 401 — « Je ne sais pas qui vous êtes » : token absent, invalide ou expiré.
@@ -39,9 +39,11 @@ public class JwtAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json;charset=UTF-8");
+        // Même corps d'erreur que le GlobalExceptionHandler (message + status + timestamp),
+        // plus « expired » propre au 401.
         response.getWriter().write(
                 objectMapper.writeValueAsString(
-                        Map.of("message", message, "expired", tokenExpire)
+                        ApiErrorResponse.unauthorized(message, tokenExpire)
                 )
         );
     }

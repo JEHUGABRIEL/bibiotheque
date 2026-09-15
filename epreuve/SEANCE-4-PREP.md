@@ -1,17 +1,28 @@
 # Séance 4 — Fiche de préparation (8 min)
 
-## 1. Comptes de démo (tous mot de passe : `admin123`)
+> Les exigences de tests (backend et frontend) et leur traçabilité vers les fichiers de
+test sont dans [`EXIGENCES-TESTS.md`](./EXIGENCES-TESTS.md).
 
-| Compte | Rôle | Réservations au démarrage |
-|---|---|---|
-| `alice` | ADHERENT | #1 → livre 1 (Le Petit Prince) |
-| `karim` | ADHERENT | #2 → livre 2 (1984) |
-| `biblio` | BIBLIOTHECAIRE | aucune (voit tout) |
-| `admin` | Admin (ancien compte) | — |
+## 1. Comptes de démo
 
-Livres : #1 Le Petit Prince (0 ex.), #2 1984 (3 ex. → RG-01 refus), #3 Dune (0 ex. → réservable).
+Créés et vérifiés par `./docker/seed-demo.sh` (idempotent : à relancer si la base est
+réinitialisée).
 
-> ⚠️ Après la démo RS-04, la réservation #3 (Dune → alice) existe. Si tu rejoues, annule-la ou supprime-la avec biblio.
+| Compte | Mot de passe | Rôle | Au démarrage |
+|---|---|---|---|
+| `adherent1` | `adherent123` | ADHERENT | réservation **#1** → livre 4 « Les Misérables » (**EN_ATTENTE**) |
+| `adherent2` | `adherent123` | ADHERENT | **#2** → livre 5 « L'Aventure ambiguë » (**DEMANDE**) ; **#3** → livre 7 « Voyage au bout de la nuit » (EN_ATTENTE) |
+| `biblio1` | `biblio123` | BIBLIOTHECAIRE | aucune (voit tout) |
+| `admin` | `admin123` | Admin (ancien compte) | — |
+
+Catalogue : **#1** L'Étranger (3 ex.), **#2** Le Petit Prince (2 ex.), **#3** Une si longue
+lettre (1 ex.) → empruntables. **#4** Les Misérables, **#5** L'Aventure ambiguë, **#6** Le
+Vieux Nègre et la Médaille, **#7** Voyage au bout de la nuit → 0 exemplaire, donc
+**réservables** (RG-01 interdit de réserver un livre disponible).
+
+> ⚠️ **#6 « Le Vieux Nègre et la Médaille » (0 ex.) est laissé libre** : c'est le livre à
+> utiliser pour une création de réservation en direct. Une fois réservé, il reste bloqué par
+> la règle « une seule réservation active par livre » (409 au second essai).
 
 ## 2. Où chaque règle est implémentée (à citer si le formateur demande)
 
@@ -23,7 +34,7 @@ Livres : #1 Le Petit Prince (0 ex.), #2 1984 (3 ex. → RG-01 refus), #3 Dune (0
 | **RS-04** (identité du token) | `service/ReservationService.java` | `createFor()` ÉCRASE `reservation.setUserId(user.getUserId())` pour un ADHERENT ; le `userId` du corps est ignoré |
 | **RS-05** (liste filtrée) | `service/ReservationService.java` + `dao/ReservationRepository.java` | `findByUserId(...)` pour l'ADHERENT, `findAll()` pour le BIBLIOTHECAIRE |
 | 401 vs 403 | `JwtAuthenticationEntryPoint` (401) / `GlobalExceptionHandler` + `AccessDeniedHandler` (403 JSON) | 401 = inconnu, 403 = connu mais pas le droit |
-| **RG-03** (quota 3) | `service/ReservationService.java` | `countByUserIdAndStatutIn(EN_ATTENTE, DISPONIBLE) >= 3` → 409 |
+| **RG-03** (quota 3) | `service/ReservationService.java` | `countByUserIdAndStatutIn(DEMANDE, EN_ATTENTE, DISPONIBLE) >= 3` → 409 (les `ANNULEE`/`EXPIREE`/`HONOREE` libèrent une place) |
 
 ## 3. Déroulé chronométré (8:00)
 
@@ -40,40 +51,50 @@ Phrase clé : « 401 = je ne sais pas qui vous êtes. »
 
 **2:00–3:30 — RS-05 + RS-02 : qui voit quoi**
 ```bash
-# alice ne voit que les siennes
-TOKEN=$(curl -s -X POST http://localhost:8080/authenticate -H "Content-Type: application/json" -d '{"username":"alice","password":"admin123"}' | sed -n 's/.*"jwtToken":"\([^"]*\)".*/\1/p')
-curl -s http://localhost:8080/api/reservations -H "Authorization: Bearer $TOKEN"
-# biblio voit tout
-# alice tente DELETE → 403
-curl -i -X DELETE http://localhost:8080/api/reservations/1 -H "Authorization: Bearer $TOKEN"
+token() { curl -s -X POST http://localhost:8080/authenticate -H "Content-Type: application/json" \
+  -d "{\"username\":\"$1\",\"password\":\"$2\"}" | jq -r .jwtToken; }
+TA=$(token adherent1 adherent123)   # adhérent : ne voit que les siennes (200, 2 lignes)
+TB=$(token biblio1 biblio123)       # personnel : voit tout (200, 3 lignes)
+curl -s http://localhost:8080/api/reservations -H "Authorization: Bearer $TA"
+curl -s http://localhost:8080/api/reservations -H "Authorization: Bearer $TB"
+# adhérent tente une action du personnel → 403
+curl -i -X DELETE http://localhost:8080/api/reservations/1 -H "Authorization: Bearer $TA"
 ```
 Phrase clé : « 403 = je sais qui vous êtes, et vous n'avez pas le droit. »
 
 **3:30–5:00 — RS-03 + RS-04 : la règle d'or (le poste le plus important)**
 ```bash
-# alice tente de VOIR la réservation de karim → 403
-curl -i http://localhost:8080/api/reservations/2 -H "Authorization: Bearer $TOKEN"
-# alice tente de créer UNE RÉSERVATION AU NOM DE KARIM
+# adherent1 tente de VOIR la réservation #2, qui appartient à adherent2 → 403
+curl -i http://localhost:8080/api/reservations/2 -H "Authorization: Bearer $TA"
+# adherent1 tente de créer UNE RÉSERVATION AU NOM D'ADHERENT2
 curl -s -X POST http://localhost:8080/api/reservations \
-  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-  -d '{"bookId":3,"userId":101}'   # 101 = karim, mis par le client
+  -H "Authorization: Bearer $TA" -H "Content-Type: application/json" \
+  -d '{"bookId":6,"userId":52}'   # 52 = adherent2, valeur envoyée par le client
 ```
-→ la réponse contient `"userId":51` (alice) : **le corps a été écrasé par l'identité du token**.
+→ la réponse contient `"userId":51` (adherent1) : **le corps a été écrasé par l'identité du token**.
 Phrase clé : « L'identité vient du token, jamais du corps de la requête. »
+
+> Le livre 6 est ensuite occupé. Pour rejouer l'effet, supprime la réservation créée
+> (`DELETE /api/reservations/<id>` avec `$TB`) ou relance `./docker/seed-demo.sh`.
 
 **5:00–6:30 — Les tests**
 ```bash
 ./mvnw test
 ```
-→ 13/13 verts. Insister : les tests tournent **sans base de données** (Postgres arrêté — le montrer si demandé : `docker ps`).
+→ 50/50 verts (5 classes). Insister : les tests tournent **sans base de données** (H2 en
+mémoire, `src/test/resources/application.properties` — Postgres peut être arrêté, le
+montrer si demandé : `docker ps`).
 - Unitaires (`ReservationServiceQuotaTest`) : Mockito pur, repository simulé, quota 3 (2 actifs → OK, 3 actifs → refus).
-- Intégration (`ReservationSecurityIntegrationTest`) : vrai contexte Spring + **vrais tokens signés** passant par le vrai filtre JWT → 401 / 200 / 403.
+- Intégration (`ReservationSecurityIntegrationTest`, 25 tests) : vrai contexte Spring + **vrais tokens signés** passant par le vrai filtre JWT → 401 / 200 / 403.
+- À montrer si le formateur demande « et si on ajoute un endpoint sans le sécuriser ? » :
+  `tousLesEndpoints_sansToken_renvoient401` est paramétré sur les 6 routes et vérifie que
+  chacune **existe réellement** — une faute de frappe dans un chemin ferait échouer le test.
 
 **6:30–7:30 — Montrer le code (si le formateur veut)**
 Un seul slide mental : contrôleur = `@PreAuthorize` par rôle, service = identité du token + propriété, config = 401/403 JSON. Ouvrir `ReservationService.createFor()` — 4 lignes qui résument RS-04.
 
 **7:30–8:00 — Clôture**
-« Cinq règles, cinq preuves : 401 sans token, 403 hors rôle, 403 hors propriété, identité du token, liste filtrée. Le tout vérifié par 10 tests automatiques. »
+« Cinq règles, cinq preuves : 401 sans token, 403 hors rôle, 403 hors propriété, identité du token, liste filtrée. Le tout vérifié par 50 tests automatiques, sans base de données. »
 
 ## 4. Questions pièges probables & réponses
 
@@ -92,13 +113,16 @@ curl -i http://localhost:8080/api/reservations -H "Authorization: Bearer <token_
 # → 401 {"message":"Session expirée, veuillez vous reconnecter","expired":true}
 ```
 2. **Journalisation des refus (fait)** — lancer un appel refusé puis `grep "Accès refusé"` dans la console du backend : chaque refus loggue **[401]/[403], la méthode, l'URI, l'utilisateur et la raison** (entry point, AccessDeniedHandler, ForbiddenException).
-3. **RG-01 (fait + testé)** — réserver « 1984 » (3 exemplaires) → 409 « livre disponible » ; couvert par 2 tests d'intégration (409 si disponible, 201 EN_ATTENTE si indisponible).
+3. **RG-01 (fait + testé)** — réserver « L'Étranger » (3 exemplaires) → 409 « livre disponible » ; couvert par 2 tests d'intégration (409 si disponible, 201 + EN_ATTENTE si 0 exemplaire).
 
 ## 6. Avant de partir — checklist
 
-- [ ] `docker start bibliotheque-db` puis backend démarré (`set -a; source ../docker/backend.env.local; set +a; ./mvnw spring-boot:run`)
-- [ ] Login des 3 comptes testé une fois à la main
-- [ ] `./mvnw test` → 10/10 verts
+- [ ] `docker compose up -d db` puis backend démarré (`set -a; source ../docker/backend.env.local; set +a; ./mvnw spring-boot:run`)
+- [ ] `./docker/seed-demo.sh` (comptes + catalogue + réservations, et vérifie 401/200/403)
+- [ ] Login des 4 comptes testé une fois à la main
+- [ ] `./mvnw test` → 50/50 verts · `npx ng test --watch=false --browsers=ChromeHeadless` → 234/234
+- [ ] Swagger UI ouverte une fois : <http://localhost:8080/swagger-ui/index.html>
+      (« Authorize » + jeton d'`adherent1` → tester RS-01/RS-03 sans `curl`)
 - [ ] Branche poussée + PR ouverte (description ci-dessous)
 
 ## 7. Description de Pull Request (à copier)
@@ -119,8 +143,8 @@ Fermeture de `/api/reservations` : authentification obligatoire, rôles ADHERENT
 - **Journalisation des accès refusés** — chaque 401/403 est loggué avec qui, où et pourquoi (entry point, `AccessDeniedHandler`, `GlobalExceptionHandler`)
 - **RG-01 testé** — 2 tests d'intégration : 409 sur livre disponible, 201 + EN_ATTENTE sur livre indisponible
 
-**Tests (13/13 verts, sans base de données) :**
+**Tests (50/50 verts, sans base de données) :**
 - `ReservationServiceQuotaTest` — RG-03, repository mocké (Mockito), quota 3 actifs
-- `ReservationSecurityIntegrationTest` — vrais tokens signés + vrai filtre JWT : 401 / 200 filtré / 403 propriétaire / 403 DELETE / token expiré → message dédié / RG-01 (409 livre disponible, 201 livre indisponible)
+- `ReservationSecurityIntegrationTest` (25 tests) — vrais tokens signés + vrai filtre JWT : 401 sur les **6** endpoints (paramétré, avec vérification que la route existe) / 200 filtré / 403 lecture et **403 annulation** d'autrui / 200 annulation de la sienne / 403 DELETE / **?statut= filtré sur l'id du token** / token expiré → message dédié / RG-01 (409 livre disponible, 201 livre indisponible)
 
 *(coller ici la capture du résultat `./mvnw test`)*

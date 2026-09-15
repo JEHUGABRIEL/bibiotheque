@@ -1,13 +1,43 @@
 services:
+  # Base de données du projet.
+  # Identifiants dans docker/app.env (+ app.env.local, ignoré par git).
+  # Le port est publié sur l'hôte pour que le backend lancé « à la main »
+  # (./mvnw spring-boot:run) joigne lui aussi la base sans rien changer.
+  # ATTENTION : ne pas démarrer en même temps le cluster PostgreSQL de l'hôte
+  # (port 5432) — `docker compose stop db` d'abord.
+  db:
+    image: postgres:16-alpine
+    env_file:
+      - ./docker/app.env
+      - ./docker/app.env.local
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
   backend:
     build: ./bibliotheque-backend
     env_file:
       - ./docker/backend.env
       - ./docker/backend.env.local
+    environment:
+      # Le conteneur parle au service « db » sur le réseau compose, alors que
+      # SPRING_DATASOURCE_URL de docker/backend.env vise host.docker.internal.
+      # Ce nom de base doit rester le même que POSTGRES_DB (docker/app.env).
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bibliotheque
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
       - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
     restart: on-failure
 
   frontend:
@@ -16,3 +46,6 @@ services:
       - "${FRONTEND_PORT:-4200}:80"
     depends_on:
       - backend
+
+volumes:
+  db-data:

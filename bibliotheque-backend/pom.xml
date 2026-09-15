@@ -30,6 +30,16 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
+		<!-- Documentation d'API : Swagger UI sur /swagger-ui/index.html.
+		     Version OBLIGATOIREMENT pinnée : le parent Spring Boot ne gère pas springdoc.
+		     La ligne 2.x est celle compatible Spring Boot 3 ; la 1.x (springdoc-openapi-ui),
+		     qu'on trouve encore dans le cache Maven local, ne démarre pas. -->
+		<dependency>
+			<groupId>org.springdoc</groupId>
+			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+			<version>2.3.0</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-devtools</artifactId>
